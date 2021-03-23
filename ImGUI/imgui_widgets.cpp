@@ -1,4 +1,4 @@
-// dear imgui, v1.82 WIP
+// dear imgui, v1.83 WIP
 // (widgets code)
 
 /*
@@ -874,19 +874,19 @@ void ImGui::Scrollbar(ImGuiAxis axis)
 
     // Calculate scrollbar bounding box
     ImRect bb = GetWindowScrollbarRect(window, axis);
-    ImDrawCornerFlags rounding_corners = 0;
+    ImDrawFlags rounding_corners = ImDrawFlags_RoundCornersNone;
     if (axis == ImGuiAxis_X)
     {
-        rounding_corners |= ImDrawCornerFlags_BotLeft;
+        rounding_corners |= ImDrawFlags_RoundCornersBottomLeft;
         if (!window->ScrollbarY)
-            rounding_corners |= ImDrawCornerFlags_BotRight;
+            rounding_corners |= ImDrawFlags_RoundCornersBottomRight;
     }
     else
     {
         if ((window->Flags & ImGuiWindowFlags_NoTitleBar) && !(window->Flags & ImGuiWindowFlags_MenuBar))
-            rounding_corners |= ImDrawCornerFlags_TopRight;
+            rounding_corners |= ImDrawFlags_RoundCornersTopRight;
         if (!window->ScrollbarX)
-            rounding_corners |= ImDrawCornerFlags_BotRight;
+            rounding_corners |= ImDrawFlags_RoundCornersBottomRight;
     }
     float size_avail = window->InnerRect.Max[axis] - window->InnerRect.Min[axis];
     float size_contents = window->ContentSize[axis] + window->WindowPadding[axis] * 2.0f;
@@ -899,7 +899,7 @@ void ImGui::Scrollbar(ImGuiAxis axis)
 // - We store values as normalized ratio and in a form that allows the window content to change while we are holding on a scrollbar
 // - We handle both horizontal and vertical scrollbars, which makes the terminology not ideal.
 // Still, the code should probably be made simpler..
-bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, float* p_scroll_v, float size_avail_v, float size_contents_v, ImDrawCornerFlags rounding_corners)
+bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, float* p_scroll_v, float size_avail_v, float size_contents_v, ImDrawFlags flags)
 {
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = g.CurrentWindow;
@@ -979,7 +979,7 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, floa
     // Render
     const ImU32 bg_col = GetColorU32(ImGuiCol_ScrollbarBg);
     const ImU32 grab_col = GetColorU32(held ? ImGuiCol_ScrollbarGrabActive : hovered ? ImGuiCol_ScrollbarGrabHovered : ImGuiCol_ScrollbarGrab, alpha);
-    window->DrawList->AddRectFilled(bb_frame.Min, bb_frame.Max, bg_col, window->WindowRounding, rounding_corners);
+    window->DrawList->AddRectFilled(bb_frame.Min, bb_frame.Max, bg_col, window->WindowRounding, flags);
     ImRect grab_rect;
     if (axis == ImGuiAxis_X)
         grab_rect = ImRect(ImLerp(bb.Min.x, bb.Max.x, grab_v_norm), bb.Min.y, ImLerp(bb.Min.x, bb.Max.x, grab_v_norm) + grab_h_pixels, bb.Max.y);
@@ -1579,12 +1579,12 @@ bool ImGui::BeginCombo(const char* label, const char* preview_value, ImGuiComboF
     const float value_x2 = ImMax(frame_bb.Min.x, frame_bb.Max.x - arrow_size);
     RenderNavHighlight(frame_bb, id);
     if (!(flags & ImGuiComboFlags_NoPreview))
-        window->DrawList->AddRectFilled(frame_bb.Min, ImVec2(value_x2, frame_bb.Max.y), frame_col, style.FrameRounding, (flags & ImGuiComboFlags_NoArrowButton) ? ImDrawCornerFlags_All : ImDrawCornerFlags_Left);
+        window->DrawList->AddRectFilled(frame_bb.Min, ImVec2(value_x2, frame_bb.Max.y), frame_col, style.FrameRounding, (flags & ImGuiComboFlags_NoArrowButton) ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersLeft);
     if (!(flags & ImGuiComboFlags_NoArrowButton))
     {
         ImU32 bg_col = GetColorU32((popup_open || hovered) ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
         ImU32 text_col = GetColorU32(ImGuiCol_Text);
-        window->DrawList->AddRectFilled(ImVec2(value_x2, frame_bb.Min.y), frame_bb.Max, bg_col, style.FrameRounding, (w <= arrow_size) ? ImDrawCornerFlags_All : ImDrawCornerFlags_Right);
+        window->DrawList->AddRectFilled(ImVec2(value_x2, frame_bb.Min.y), frame_bb.Max, bg_col, style.FrameRounding, (w <= arrow_size) ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersRight);
         if (value_x2 + arrow_size - style.FramePadding.x <= frame_bb.Max.x)
             RenderArrow(window->DrawList, ImVec2(value_x2 + style.FramePadding.y, frame_bb.Min.y + style.FramePadding.y), text_col, ImGuiDir_Down, 1.0f);
     }
@@ -1790,7 +1790,7 @@ static const ImGuiDataTypeInfo GDataTypeInfo[] =
     { sizeof(ImS64),            "S64",  "%lld", "%lld"  },  // ImGuiDataType_S64
     { sizeof(ImU64),            "U64",  "%llu", "%llu"  },
 #endif
-    { sizeof(float),            "float", "%f",  "%f"    },  // ImGuiDataType_Float (float are promoted to double in va_arg)
+    { sizeof(float),            "float", "%.3f","%f"    },  // ImGuiDataType_Float (float are promoted to double in va_arg)
     { sizeof(double),           "double","%f",  "%lf"   },  // ImGuiDataType_Double
 };
 IM_STATIC_ASSERT(IM_ARRAYSIZE(GDataTypeInfo) == ImGuiDataType_COUNT);
@@ -2143,9 +2143,9 @@ bool ImGui::DragBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const
 {
     ImGuiContext& g = *GImGui;
     const ImGuiAxis axis = (flags & ImGuiSliderFlags_Vertical) ? ImGuiAxis_Y : ImGuiAxis_X;
-    const bool is_decimal = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
     const bool is_clamped = (v_min < v_max);
-    const bool is_logarithmic = (flags & ImGuiSliderFlags_Logarithmic) && is_decimal;
+    const bool is_logarithmic = (flags & ImGuiSliderFlags_Logarithmic) != 0;
+    const bool is_floating_point = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
 
     // Default tweak speed
     if (v_speed == 0.0f && is_clamped && (v_max - v_min < FLT_MAX))
@@ -2163,7 +2163,7 @@ bool ImGui::DragBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const
     }
     else if (g.ActiveIdSource == ImGuiInputSource_Nav)
     {
-        int decimal_precision = is_decimal ? ImParseFormatPrecision(format, 3) : 0;
+        const int decimal_precision = is_floating_point ? ImParseFormatPrecision(format, 3) : 0;
         adjust_delta = GetNavInputAmount2d(ImGuiNavDirSourceFlags_Keyboard | ImGuiNavDirSourceFlags_PadDPad, ImGuiInputReadMode_RepeatFast, 1.0f / 10.0f, 10.0f)[axis];
         v_speed = ImMax(v_speed, GetMinimumStepAtDecimalPrecision(decimal_precision));
     }
@@ -2203,7 +2203,7 @@ bool ImGui::DragBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const
     if (is_logarithmic)
     {
         // When using logarithmic sliders, we need to clamp to avoid hitting zero, but our choice of clamp value greatly affects slider precision. We attempt to use the specified precision to estimate a good lower bound.
-        const int decimal_precision = is_decimal ? ImParseFormatPrecision(format, 3) : 1;
+        const int decimal_precision = is_floating_point ? ImParseFormatPrecision(format, 3) : 1;
         logarithmic_zero_epsilon = ImPow(0.1f, (float)decimal_precision);
 
         // Convert to parametric space, apply delta, convert back
@@ -2241,9 +2241,9 @@ bool ImGui::DragBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const
     // Clamp values (+ handle overflow/wrap-around for integer types)
     if (*v != v_cur && is_clamped)
     {
-        if (v_cur < v_min || (v_cur > *v && adjust_delta < 0.0f && !is_decimal))
+        if (v_cur < v_min || (v_cur > *v && adjust_delta < 0.0f && !is_floating_point))
             v_cur = v_min;
-        if (v_cur > v_max || (v_cur < *v && adjust_delta > 0.0f && !is_decimal))
+        if (v_cur > v_max || (v_cur < *v && adjust_delta > 0.0f && !is_floating_point))
             v_cur = v_max;
     }
 
@@ -2302,6 +2302,7 @@ bool ImGui::DragScalar(const char* label, ImGuiDataType data_type, void* p_data,
     const ImGuiStyle& style = g.Style;
     const ImGuiID id = window->GetID(label);
     const float w = CalcItemWidth();
+
     const ImVec2 label_size = CalcTextSize(label, NULL, true);
     const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + style.FramePadding.y * 2.0f));
     const ImRect total_bb(frame_bb.Min, frame_bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
@@ -2634,7 +2635,7 @@ TYPE ImGui::ScaleValueFromRatioT(ImGuiDataType data_type, float t, TYPE v_min, T
 {
     if (v_min == v_max)
         return v_min;
-    const bool is_decimal = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
+    const bool is_floating_point = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
 
     TYPE result;
     if (is_logarithmic)
@@ -2682,7 +2683,7 @@ TYPE ImGui::ScaleValueFromRatioT(ImGuiDataType data_type, float t, TYPE v_min, T
     else
     {
         // Linear slider
-        if (is_decimal)
+        if (is_floating_point)
         {
             result = ImLerp(v_min, v_max, t);
         }
@@ -2715,14 +2716,14 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
     const ImGuiStyle& style = g.Style;
 
     const ImGuiAxis axis = (flags & ImGuiSliderFlags_Vertical) ? ImGuiAxis_Y : ImGuiAxis_X;
-    const bool is_decimal = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
-    const bool is_logarithmic = (flags & ImGuiSliderFlags_Logarithmic) && is_decimal;
+    const bool is_logarithmic = (flags & ImGuiSliderFlags_Logarithmic) != 0;
+    const bool is_floating_point = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
 
     const float grab_padding = 2.0f;
     const float slider_sz = (bb.Max[axis] - bb.Min[axis]) - grab_padding * 2.0f;
     float grab_sz = style.GrabMinSize;
     SIGNEDTYPE v_range = (v_min < v_max ? v_max - v_min : v_min - v_max);
-    if (!is_decimal && v_range >= 0)                                             // v_range < 0 may happen on integer overflows
+    if (!is_floating_point && v_range >= 0)                                             // v_range < 0 may happen on integer overflows
         grab_sz = ImMax((float)(slider_sz / (v_range + 1)), style.GrabMinSize);  // For integer sliders: if possible have the grab size represent 1 unit
     grab_sz = ImMin(grab_sz, slider_sz);
     const float slider_usable_sz = slider_sz - grab_sz;
@@ -2734,7 +2735,7 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
     if (is_logarithmic)
     {
         // When using logarithmic sliders, we need to clamp to avoid hitting zero, but our choice of clamp value greatly affects slider precision. We attempt to use the specified precision to estimate a good lower bound.
-        const int decimal_precision = is_decimal ? ImParseFormatPrecision(format, 3) : 1;
+        const int decimal_precision = is_floating_point ? ImParseFormatPrecision(format, 3) : 1;
         logarithmic_zero_epsilon = ImPow(0.1f, (float)decimal_precision);
         zero_deadzone_halfsize = (style.LogSliderDeadzone * 0.5f) / ImMax(slider_usable_sz, 1.0f);
     }
@@ -2772,7 +2773,7 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
             float input_delta = (axis == ImGuiAxis_X) ? input_delta2.x : -input_delta2.y;
             if (input_delta != 0.0f)
             {
-                const int decimal_precision = is_decimal ? ImParseFormatPrecision(format, 3) : 0;
+                const int decimal_precision = is_floating_point ? ImParseFormatPrecision(format, 3) : 0;
                 if (decimal_precision > 0)
                 {
                     input_delta /= 100.0f;    // Gamepad/keyboard tweak speeds in % of slider bounds
@@ -3927,11 +3928,11 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
     ImGuiInputTextState* state = GetInputTextState(id);
 
     const bool focus_requested = FocusableItemRegister(window, id);
-    const bool focus_requested_by_code = focus_requested && (g.FocusRequestCurrWindow == window && g.FocusRequestCurrCounterRegular == window->DC.FocusCounterRegular);
+    const bool focus_requested_by_code = focus_requested && (g.TabFocusRequestCurrWindow == window && g.TabFocusRequestCurrCounterRegular == window->DC.FocusCounterRegular);
     const bool focus_requested_by_tab = focus_requested && !focus_requested_by_code;
 
     const bool user_clicked = hovered && io.MouseClicked[0];
-    const bool user_nav_input_start = (g.ActiveId != id) && ((g.NavInputId == id) || (g.NavActivateId == id && g.NavInputSource == ImGuiInputSource_NavKeyboard));
+    const bool user_nav_input_start = (g.ActiveId != id) && ((g.NavInputId == id) || (g.NavActivateId == id && g.NavInputSource == ImGuiInputSource_Keyboard));
     const bool user_scroll_finish = is_multiline && state != NULL && g.ActiveId == 0 && g.ActiveIdPreviousFrame == GetWindowScrollbarID(draw_window, ImGuiAxis_Y);
     const bool user_scroll_active = is_multiline && state != NULL && g.ActiveId == GetWindowScrollbarID(draw_window, ImGuiAxis_Y);
 
@@ -3980,8 +3981,8 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
             if (!is_multiline && focus_requested_by_code)
                 select_all = true;
         }
-        if (flags & ImGuiInputTextFlags_AlwaysInsertMode)
-            state->Stb.insert_mode = 1;
+        if (flags & ImGuiInputTextFlags_AlwaysOverwrite)
+            state->Stb.insert_mode = 1; // stb field name is indeed incorrect (see #2863)
         if (!is_multiline && (focus_requested_by_tab || (user_clicked && io.KeyCtrl)))
             select_all = true;
     }
@@ -5231,7 +5232,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
             const float a1 = (n+1.0f)/6.0f * 2.0f * IM_PI + aeps;
             const int vert_start_idx = draw_list->VtxBuffer.Size;
             draw_list->PathArcTo(wheel_center, (wheel_r_inner + wheel_r_outer)*0.5f, a0, a1, segment_per_arc);
-            draw_list->PathStroke(col_white, false, wheel_thickness);
+            draw_list->PathStroke(col_white, 0, wheel_thickness);
             const int vert_end_idx = draw_list->VtxBuffer.Size;
 
             // Paint colors over existing vertices
@@ -5357,8 +5358,8 @@ bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFl
     if ((flags & ImGuiColorEditFlags_AlphaPreviewHalf) && col_rgb.w < 1.0f)
     {
         float mid_x = IM_ROUND((bb_inner.Min.x + bb_inner.Max.x) * 0.5f);
-        RenderColorRectWithAlphaCheckerboard(window->DrawList, ImVec2(bb_inner.Min.x + grid_step, bb_inner.Min.y), bb_inner.Max, GetColorU32(col_rgb), grid_step, ImVec2(-grid_step + off, off), rounding, ImDrawCornerFlags_TopRight | ImDrawCornerFlags_BotRight);
-        window->DrawList->AddRectFilled(bb_inner.Min, ImVec2(mid_x, bb_inner.Max.y), GetColorU32(col_rgb_without_alpha), rounding, ImDrawCornerFlags_TopLeft | ImDrawCornerFlags_BotLeft);
+        RenderColorRectWithAlphaCheckerboard(window->DrawList, ImVec2(bb_inner.Min.x + grid_step, bb_inner.Min.y), bb_inner.Max, GetColorU32(col_rgb), grid_step, ImVec2(-grid_step + off, off), rounding, ImDrawFlags_RoundCornersRight);
+        window->DrawList->AddRectFilled(bb_inner.Min, ImVec2(mid_x, bb_inner.Max.y), GetColorU32(col_rgb_without_alpha), rounding, ImDrawFlags_RoundCornersLeft);
     }
     else
     {
@@ -5367,7 +5368,7 @@ bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFl
         if (col_source.w < 1.0f)
             RenderColorRectWithAlphaCheckerboard(window->DrawList, bb_inner.Min, bb_inner.Max, GetColorU32(col_source), grid_step, ImVec2(off, off), rounding);
         else
-            window->DrawList->AddRectFilled(bb_inner.Min, bb_inner.Max, GetColorU32(col_source), rounding, ImDrawCornerFlags_All);
+            window->DrawList->AddRectFilled(bb_inner.Min, bb_inner.Max, GetColorU32(col_source), rounding);
     }
     RenderNavHighlight(bb, id);
     if ((flags & ImGuiColorEditFlags_NoBorder) == 0)
@@ -6220,6 +6221,7 @@ void ImGui::EndListBox()
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = g.CurrentWindow;
     IM_ASSERT((window->Flags & ImGuiWindowFlags_ChildWindow) && "Mismatched BeginListBox/EndListBox calls. Did you test the return value of BeginListBox?");
+    IM_UNUSED(window);
 
     EndChildFrame();
     EndGroup(); // This is only required to be able to do IsItemXXX query on the whole ListBox including label
@@ -6592,7 +6594,7 @@ void ImGui::EndMenuBar()
     IM_ASSERT(window->DC.MenuBarAppending);
     PopClipRect();
     PopID();
-    window->DC.MenuBarOffset.x = window->DC.CursorPos.x - window->MenuBarRect().Min.x; // Save horizontal position so next append can reuse it. This is kinda equivalent to a per-layer CursorPos.
+    window->DC.MenuBarOffset.x = window->DC.CursorPos.x - window->Pos.x; // Save horizontal position so next append can reuse it. This is kinda equivalent to a per-layer CursorPos.
     g.GroupStack.back().EmitItem = false;
     EndGroup(); // Restore position on layer 0
     window->DC.LayoutType = ImGuiLayoutType_Vertical;
@@ -6613,7 +6615,7 @@ bool ImGui::BeginMainMenuBar()
     if (menu_bar_window == NULL || menu_bar_window->BeginCount == 0)
     {
         // Set window position
-        // We don't attempt to calculate our height ahead, as it depends on the per-viewport font size. 
+        // We don't attempt to calculate our height ahead, as it depends on the per-viewport font size.
         // However menu-bar will affect the minimum window size so we'll get the right height.
         ImVec2 menu_bar_pos = viewport->Pos + viewport->CurrWorkOffsetMin;
         ImVec2 menu_bar_size = ImVec2(viewport->Size.x - viewport->CurrWorkOffsetMin.x + viewport->CurrWorkOffsetMax.x, 1.0f);
@@ -7890,7 +7892,7 @@ void ImGui::TabItemBackground(ImDrawList* draw_list, const ImRect& bb, ImGuiTabI
         draw_list->PathArcToFast(ImVec2(bb.Min.x + rounding + 0.5f, y1 + rounding + 0.5f), rounding, 6, 9);
         draw_list->PathArcToFast(ImVec2(bb.Max.x - rounding - 0.5f, y1 + rounding + 0.5f), rounding, 9, 12);
         draw_list->PathLineTo(ImVec2(bb.Max.x - 0.5f, y2));
-        draw_list->PathStroke(GetColorU32(ImGuiCol_Border), false, g.Style.TabBorderSize);
+        draw_list->PathStroke(GetColorU32(ImGuiCol_Border), 0, g.Style.TabBorderSize);
     }
 }
 

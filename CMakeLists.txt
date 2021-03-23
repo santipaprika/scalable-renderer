@@ -30,7 +30,15 @@ link_directories(${OPENGL_LIBRARY_DIRS})
 link_directories(${GLUT_LIBRARY_DIRS})
 link_directories(${GLEW_LIBRARY_DIRS})
 
-add_executable(${appName} PLYReader.h PLYReader.cpp TriangleMesh.h TriangleMesh.cpp Camera.h Camera.cpp Scene.h Scene.cpp Shader.h Shader.cpp ShaderProgram.h ShaderProgram.cpp Application.h Application.cpp main.cpp)
+file(GLOB ImGUI_SRC
+     "ImGUI/*.h"
+     "ImGUI/*.cpp"
+)
+
+add_executable(${appName} PLYReader.h PLYReader.cpp TriangleMesh.h TriangleMesh.cpp Camera.h Camera.cpp Scene.h Scene.cpp Shader.h Shader.cpp ShaderProgram.h ShaderProgram.cpp Application.h Application.cpp main.cpp ${ImGUI_SRC})
+                
+#ImGUI/imgui_demo.cpp ImGUI/imgui_draw.cpp ImGUI/imgui_demo.cpp ImGUI/imgui_impl_glut.cpp ImGUI/imgui_impl_opengl3.cpp ImGUI/imgui_tables.cpp
+ #               ImGUI/imgui_widgets.cpp ImGUI/imgui.cpp)
 
 target_link_libraries(${appName} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLEW_LIBRARIES})
 

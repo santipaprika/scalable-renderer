@@ -54,6 +54,7 @@ private:
 
 	int frameCount;
 	int timeCounter;				  // Time in ms
+    float framerate;
 	                                  
 };
 

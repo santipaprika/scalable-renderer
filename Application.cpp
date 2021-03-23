@@ -1,9 +1,9 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <iostream>
+#include <iomanip>
 #include "Application.h"
-//#include "ImGUI/imgui.cpp"
-//#include "ImGUI/imgui_impl_opengl3.cpp"
+#include "ImGUI/imgui.h"
 
 
 void Application::init()
@@ -25,6 +25,7 @@ void Application::init()
 
 	frameCount = 0;
 	timeCounter = 0;
+    framerate = 0;
 }
 
 bool Application::loadMesh(const char *filename)
@@ -39,12 +40,11 @@ bool Application::update(int deltaTime)
 	frameCount++;
 	timeCounter += deltaTime;
 
-	if (frameCount >= 100)
+	if (timeCounter >= 1000)
 	{
-		std::cout << (frameCount * 1000) / timeCounter << std::endl;
+		this->framerate = (frameCount * 1000) / float(timeCounter);
 		frameCount = 0;
 		timeCounter = 0;
-		//ImGui::Text("Test");
 	}
 
 	return bPlay;
@@ -54,6 +54,11 @@ void Application::render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	scene.render();
+    // std::cout << framerate;
+    ImGui::Begin("Framerate");
+    ImGui::Text("ImGui FR: %.1f FPS", ImGui::GetIO().Framerate);
+    ImGui::Text("Computed FR: %.1f FPS", framerate);
+    ImGui::End();
 }
 
 void Application::resize(int width, int height)
