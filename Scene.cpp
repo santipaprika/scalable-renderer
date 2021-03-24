@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include "Scene.h"
 #include "PLYReader.h"
+#include "Application.h"
 
 
 Scene::Scene()
@@ -50,6 +51,8 @@ bool Scene::loadMesh(const char *filename)
 void Scene::update(int deltaTime)
 {
 	currentTime += deltaTime;
+
+    updateKeyPressedEvents(deltaTime);
 }
 
 void Scene::render()
@@ -92,6 +95,33 @@ void Scene::render()
 			mesh->render();
 		}
 	}
+}
+
+void Scene::updateKeyPressedEvents(float deltaTime) 
+{
+    
+    enum {LEFT_KEY='a', RIGHT_KEY='d', FRONT_KEY='w', BACK_KEY='s', UP_KEY='e', DOWN_KEY='q'};
+    enum {LEFT, RIGHT, FRONT, BACK, UP, DOWN};
+    glm::vec3 directions[] = {glm::vec3(1,0,0),glm::vec3(-1,0,0),glm::vec3(0,0,1),glm::vec3(0,0,-1),glm::vec3(0,-1,0),glm::vec3(0,1,0)};
+    deltaTime = deltaTime/1000.;
+    glm::vec3 move_direction = glm::vec3(0,0,0);
+
+    if (Application::instance().getKey(LEFT_KEY))
+        move_direction += directions[LEFT];
+    if (Application::instance().getKey(RIGHT_KEY))
+        move_direction += directions[RIGHT];
+    if (Application::instance().getKey(FRONT_KEY))
+        move_direction += directions[FRONT];
+    if (Application::instance().getKey(BACK_KEY))
+        move_direction += directions[BACK];
+    if (Application::instance().getKey(UP_KEY))
+        move_direction += directions[UP];
+    if (Application::instance().getKey(DOWN_KEY))
+        move_direction += directions[DOWN];
+
+    glm::normalize(move_direction);
+    camera.move(move_direction*deltaTime*camera.getVelocity());
+
 }
 
 Camera &Scene::getCamera()

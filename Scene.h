@@ -23,6 +23,7 @@ public:
 	bool loadMesh(const char *filename);
 	void update(int deltaTime);
 	void render();
+    void updateKeyPressedEvents(float deltaTime);
 
   Camera &getCamera();
   

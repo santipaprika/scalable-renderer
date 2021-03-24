@@ -30,7 +30,7 @@ public:
 	void resize(int width, int height);
 	
 	// Input callback methods
-	void keyPressed(int key);
+	void keyPressed(int key, float deltaTime);
 	void keyReleased(int key);
 	void specialKeyPressed(int key);
 	void specialKeyReleased(int key);

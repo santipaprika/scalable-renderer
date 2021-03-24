@@ -20,7 +20,10 @@ static void keyboardDownCallback(unsigned char key, int x, int y)
     ImGui_ImplGLUT_KeyboardFunc(key, x, y);
     if (ImGui::GetIO().WantCaptureKeyboard) return;
 
-    Application::instance().keyPressed(key);
+    int currentTime = glutGet(GLUT_ELAPSED_TIME);
+    int deltaTime = currentTime - prevTime;
+
+    Application::instance().keyPressed(key, deltaTime);
 }
 
 // If a key is released this callback is called
