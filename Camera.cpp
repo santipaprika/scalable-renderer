@@ -23,7 +23,7 @@ void Camera::init(float initDistance, float initAngleX, float initAngleY)
     rangeDistanceCamera[1] = 3.0f;
     position = glm::vec3(0.0f, 0.0f, -distance);
     velocity = 2;
-    rotationSpeed = 0.5;
+    rotationSpeed = 5;
 
     computeModelViewMatrix();
 }
@@ -35,9 +35,10 @@ void Camera::resizeCameraViewport(int width, int height)
 
 void Camera::rotateCamera(float xRotation, float yRotation)
 {
-    angleX += xRotation;
+    angleX += xRotation * rotationSpeed;
     angleX = glm::max(-75.0f, glm::min(angleX, 75.0f));
-    angleY += yRotation;
+    angleY += yRotation * rotationSpeed;
+
     computeModelViewMatrix();
 }
 
@@ -51,24 +52,29 @@ void Camera::zoomCamera(float distDelta)
 void Camera::computeModelViewMatrix()
 {
     modelview = glm::mat4(1.0f);
-    modelview = glm::rotate(modelview, angleY / 180.f * PI * rotationSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
-    modelview[3][0] = -position[0];
-    modelview[3][1] = -position[1];
-    modelview[3][2] = -position[2];
-    // modelview = glm::translate(modelview, -position);
+    modelview = glm::rotate(modelview, angleY / 180.f * PI, glm::vec3(0.0f, 1.0f, 0.0f));
+    modelview = glm::rotate(modelview, angleX / 180.f * PI, glm::vec3(1.0f, 0.0f, 0.0f));
+    //modelview = glm::lookAt(position, position + glm::vec3(sin(angleY),0,cos(angleY)), glm::vec3(0,1,0));
+    modelview[3][0] = position[0];
+    modelview[3][1] = position[1];
+    modelview[3][2] = position[2];
     modelview = glm::inverse(modelview);
-    // modelview = glm::rotate(modelview, angleX / 180.f * PI, glm::vec3(1.0f, 0.0f, 0.0f));
+
 }
 
 void Camera::move(glm::vec3 delta_direction)
 {
-    glm::vec3 moveAmount = (delta_direction * velocity);
-    glm::vec4 moveAmountH(moveAmount, 0.0f);
-    position += glm::vec3(modelview * moveAmountH);
-    //  position = glm::vec3(modelview * moveAmountH);
-    //modelview = glm::translate(modelview, moveAmount);
-    //position = modelview[3]
-    std::cout << position.x << ", " << position.y << "," << position.z << std::endl;
+    glm::vec3 moveAmount = (-delta_direction * velocity);
+    glm::vec4 moveAmountH(moveAmount, 1.0f);
+    moveAmountH = glm::inverse(modelview) * moveAmountH;
+    position = glm::vec3(moveAmountH);
+
+    // if (delta_direction.y != 0)
+    //     position = glm::vec3(0, moveAmountH.y, 0);
+    // else
+    //     position = glm::vec3(moveAmountH.x, 0, moveAmountH.z);
+
+
     computeModelViewMatrix();
 }
 

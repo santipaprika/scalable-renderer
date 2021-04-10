@@ -107,20 +107,28 @@ void Application::mouseMove(int x, int y)
 
 void Application::mousePassiveMove(int x, int y)
 {
-    scene.getCamera().rotateCamera(0.5f * deltaTime * (y - lastMousePos.y), 0.5f * deltaTime * (x - lastMousePos.x));
+    glm::vec2 center((float)width / 2, (float)height / 2);
+    glm::vec2 cameraAngle(-(y-center.y),-(x-center.x)); 
 
-    if (x < 100 || x > width - 100)
-    {                               
-        lastMousePos.x = (float)width / 2; 
-        lastMousePos.y = (float)height / 2;
-        glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
+    if(cameraAngle.x != 0.0f || cameraAngle.y != 0.0f) {
+        scene.getCamera().rotateCamera(0.5f * deltaTime * cameraAngle.x, 0.5f * deltaTime * cameraAngle.y);
+        glutPostRedisplay();
+
+        if (x != center.x || y != center.y) 
+                glutWarpPointer(center.x, center.y);
     }
-    else if (y < 100 || y > height - 100)
-    {
-        lastMousePos.x = (float)width / 2;
-        lastMousePos.y = (float)height / 2;
-        glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
-    }
+    // if (x < 100 || x > width - 100)
+    // {                               
+    //     lastMousePos.x = (float)width / 2; 
+    //     lastMousePos.y = (float)height / 2;
+    //     glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
+    // }
+    // else if (y < 100 || y > height - 100)
+    // {
+    //     lastMousePos.x = (float)width / 2;
+    //     lastMousePos.y = (float)height / 2;
+    //     glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
+    // }
     // lastMousePos = glm::vec2(x,y);
 }
 

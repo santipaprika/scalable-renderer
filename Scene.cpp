@@ -73,50 +73,9 @@ void Scene::update(float deltaTime)
 
 void Scene::render()
 {
-    // glm::mat3 normalMatrix;
-
-    // float x_step = mesh->getExtents().r * 5 / 4;
-    // float y_step = mesh->getExtents().g * 5 / 4;
-
-    // for (float i=x_step/2*(-meshInstances_dim1 + 1); i <= (meshInstances_dim1 + x_step)/2; i += x_step)
-    // {
-    // 	for (float j=y_step/2*(-meshInstances_dim1 + 1); j <= (meshInstances_dim1 + y_step)/2; j += y_step)
-    // 	{
-    //         glm::mat4 model;
-    // 		basicProgram.use();
-    // 		basicProgram.setUniformMatrix4f("projection", camera.getProjectionMatrix());
-
-    // 		glm::mat4 modelViewMatrix = glm::translate(camera.getModelViewMatrix(), glm::vec3(i, j, 0));
-
-    // 		basicProgram.setUniformMatrix4f("modelview", modelViewMatrix);
-    // 		normalMatrix = glm::inverseTranspose(modelViewMatrix);
-    // 		basicProgram.setUniformMatrix3f("normalMatrix", normalMatrix);
-
-    // 		basicProgram.setUniform1i("bLighting", bPolygonFill?1:0);
-    // 		if(bPolygonFill)
-    // 		{
-    // 		basicProgram.setUniform4f("color", 0.9f, 0.9f, 0.95f, 1.0f);
-    // 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    // 		}
-    // 		else
-    // 		{
-    // 			basicProgram.setUniform4f("color", 1.0f, 1.0f, 1.0f, 1.0f);
-    // 				glEnable(GL_POLYGON_OFFSET_FILL);
-    // 				glPolygonOffset(0.5f, 1.0f);
-    // 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    // 				mesh->render();
-    // 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    // 				glDisable(GL_POLYGON_OFFSET_FILL);
-    // 			basicProgram.setUniform4f("color", 0.0f, 0.0f, 0.0f, 1.0f);
-    // 		}
-    // 		mesh->render();
-    // 	}
-    // }
-
     for (int i = 0; i < nodes.size(); i++)
     {
         Node *node = nodes[i];
-        std::cout << node->getPosition()[0] << "," << node->getPosition()[1] << ", " << node->getPosition()[2] << std::endl;
 
         basicProgram.use();
         basicProgram.setUniformMatrix4f("projection", camera.getProjectionMatrix());
