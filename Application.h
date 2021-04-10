@@ -30,16 +30,20 @@ public:
 	void resize(int width, int height);
 	
 	// Input callback methods
-	void keyPressed(int key, float deltaTime);
+	void keyPressed(int key);
 	void keyReleased(int key);
 	void specialKeyPressed(int key);
 	void specialKeyReleased(int key);
 	void mouseMove(int x, int y);
+	void mousePassiveMove(int x, int y);
 	void mousePress(int button);
 	void mouseRelease(int button);
 	
 	bool getKey(int key) const;
 	bool getSpecialKey(int key) const;
+
+    int width;
+    int height;
 
 private:
 	bool bPlay;                       // Continue?
@@ -55,6 +59,9 @@ private:
 	int frameCount;
 	int timeCounter;				  // Time in ms
     float framerate;
+
+    float deltaTime;
+
 	                                  
 };
 

@@ -18,11 +18,10 @@ public:
     void resizeCameraViewport(int width, int height);
     void rotateCamera(float xRotation, float yRotation);
     void zoomCamera(float distDelta);
-    void move(glm::vec3 moveAmount);
+    void move(glm::vec3 delta_direction);
 
     glm::mat4 &getProjectionMatrix();
     glm::mat4 &getModelViewMatrix();
-    float getVelocity();
 
 private:
     void computeModelViewMatrix();
@@ -31,6 +30,7 @@ private:
     float angleX, angleY, distance; // Camera parameters
     glm::vec3 position;
     float velocity;
+    float rotationSpeed;
     float rangeDistanceCamera[2];
     glm::mat4 projection, modelview; // OpenGL matrices
 };

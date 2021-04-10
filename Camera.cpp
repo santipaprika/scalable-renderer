@@ -2,6 +2,7 @@
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
+#include <iostream>
 
 #define PI 3.14159f
 
@@ -22,6 +23,7 @@ void Camera::init(float initDistance, float initAngleX, float initAngleY)
     rangeDistanceCamera[1] = 3.0f;
     position = glm::vec3(0.0f, 0.0f, -distance);
     velocity = 2;
+    rotationSpeed = 0.5;
 
     computeModelViewMatrix();
 }
@@ -49,15 +51,24 @@ void Camera::zoomCamera(float distDelta)
 void Camera::computeModelViewMatrix()
 {
     modelview = glm::mat4(1.0f);
-    modelview = glm::translate(modelview, position);
-    modelview = glm::rotate(modelview, angleX / 180.f * PI, glm::vec3(1.0f, 0.0f, 0.0f));
-    modelview = glm::rotate(modelview, angleY / 180.f * PI, glm::vec3(0.0f, 1.0f, 0.0f));
+    modelview = glm::rotate(modelview, angleY / 180.f * PI * rotationSpeed, glm::vec3(0.0f, 1.0f, 0.0f));
+    modelview[3][0] = -position[0];
+    modelview[3][1] = -position[1];
+    modelview[3][2] = -position[2];
+    // modelview = glm::translate(modelview, -position);
+    modelview = glm::inverse(modelview);
+    // modelview = glm::rotate(modelview, angleX / 180.f * PI, glm::vec3(1.0f, 0.0f, 0.0f));
 }
 
-void Camera::move(glm::vec3 moveAmount)
+void Camera::move(glm::vec3 delta_direction)
 {
-    position = position + moveAmount;
-    modelview = glm::translate(modelview, moveAmount);
+    glm::vec3 moveAmount = (delta_direction * velocity);
+    glm::vec4 moveAmountH(moveAmount, 0.0f);
+    position += glm::vec3(modelview * moveAmountH);
+    //  position = glm::vec3(modelview * moveAmountH);
+    //modelview = glm::translate(modelview, moveAmount);
+    //position = modelview[3]
+    std::cout << position.x << ", " << position.y << "," << position.z << std::endl;
     computeModelViewMatrix();
 }
 
@@ -69,9 +80,4 @@ glm::mat4 &Camera::getProjectionMatrix()
 glm::mat4 &Camera::getModelViewMatrix()
 {
     return modelview;
-}
-
-float Camera::getVelocity() 
-{
-    return velocity;
 }

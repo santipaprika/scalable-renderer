@@ -20,10 +20,7 @@ static void keyboardDownCallback(unsigned char key, int x, int y)
     ImGui_ImplGLUT_KeyboardFunc(key, x, y);
     if (ImGui::GetIO().WantCaptureKeyboard) return;
 
-    int currentTime = glutGet(GLUT_ELAPSED_TIME);
-    int deltaTime = currentTime - prevTime;
-
-    Application::instance().keyPressed(key, deltaTime);
+    Application::instance().keyPressed(key);
 }
 
 // If a key is released this callback is called
@@ -64,6 +61,13 @@ static void motionCallback(int x, int y)
     if (ImGui::GetIO().WantCaptureMouse) return;
 
     Application::instance().mouseMove(x, y);
+}
+
+static void passiveMotionCallback(int x, int y)
+{
+    // ImGui_ImplGLUT_PassiveMotionFunc(x, y);
+    // if (ImGui::GetIO().WantCaptureMouse) return;
+    Application::instance().mousePassiveMove(x, y);
 }
 
 // Same for mouse button presses or releases
@@ -172,7 +176,9 @@ int main(int argc, char **argv)
     glutSpecialFunc(specialDownCallback);
     glutSpecialUpFunc(specialUpCallback);
     glutMouseFunc(mouseCallback);
+    glutPassiveMotionFunc(passiveMotionCallback);
     glutMotionFunc(motionCallback);
+    glutSetCursor( GLUT_CURSOR_NONE );
 
     // GLEW will take care of OpenGL extension functions
     glewExperimental = GL_TRUE;

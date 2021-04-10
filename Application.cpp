@@ -34,7 +34,8 @@ bool Application::loadMesh(const char *filename)
 
 bool Application::update(int deltaTime)
 {
-    scene.update(deltaTime);
+    this->deltaTime = deltaTime/1000.;
+    scene.update(this->deltaTime);
 
     frameCount++;
     timeCounter += deltaTime;
@@ -64,9 +65,11 @@ void Application::resize(int width, int height)
 {
     glViewport(0, 0, width, height);
     scene.getCamera().resizeCameraViewport(width, height);
+    this->width = width;
+    this->height = height;
 }
 
-void Application::keyPressed(int key, float deltaTime)
+void Application::keyPressed(int key)
 {
     if (key == 27) // Escape code
         bPlay = false;
@@ -95,15 +98,30 @@ void Application::specialKeyReleased(int key)
 
 void Application::mouseMove(int x, int y)
 {
-    // Rotation
-    if (mouseButtons[0] && lastMousePos.x != -1)
-        scene.getCamera().rotateCamera(0.5f * (y - lastMousePos.y), 0.5f * (x - lastMousePos.x));
-
     // Zoom
     if (mouseButtons[1] && lastMousePos.x != -1)
-        scene.getCamera().zoomCamera(0.01f * (y - lastMousePos.y));
+        glutSetCursor(GLUT_CURSOR_CROSSHAIR);
 
     lastMousePos = glm::ivec2(x, y);
+}
+
+void Application::mousePassiveMove(int x, int y)
+{
+    scene.getCamera().rotateCamera(0.5f * deltaTime * (y - lastMousePos.y), 0.5f * deltaTime * (x - lastMousePos.x));
+
+    if (x < 100 || x > width - 100)
+    {                               
+        lastMousePos.x = (float)width / 2; 
+        lastMousePos.y = (float)height / 2;
+        glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
+    }
+    else if (y < 100 || y > height - 100)
+    {
+        lastMousePos.x = (float)width / 2;
+        lastMousePos.y = (float)height / 2;
+        glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
+    }
+    // lastMousePos = glm::vec2(x,y);
 }
 
 void Application::mousePress(int button)
