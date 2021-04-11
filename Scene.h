@@ -18,7 +18,8 @@ public:
     ~Scene();
 
     void init();
-    void setupScene();
+    void setupGridScene();
+    void setupMuseumScene();
     bool loadMesh(const char *filename);
     void update(float deltaTime);
     void render();

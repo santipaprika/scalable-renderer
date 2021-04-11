@@ -117,19 +117,6 @@ void Application::mousePassiveMove(int x, int y)
         if (x != center.x || y != center.y) 
                 glutWarpPointer(center.x, center.y);
     }
-    // if (x < 100 || x > width - 100)
-    // {                               
-    //     lastMousePos.x = (float)width / 2; 
-    //     lastMousePos.y = (float)height / 2;
-    //     glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
-    // }
-    // else if (y < 100 || y > height - 100)
-    // {
-    //     lastMousePos.x = (float)width / 2;
-    //     lastMousePos.y = (float)height / 2;
-    //     glutWarpPointer((float)width / 2, (float)height / 2); //centers the cursor
-    // }
-    // lastMousePos = glm::vec2(x,y);
 }
 
 void Application::mousePress(int button)

@@ -1,4 +1,8 @@
+#include <string>
+#include <sstream>
 #include <iostream>
+#include <fstream>
+#include <regex>
 #include <cmath>
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
@@ -26,16 +30,21 @@ void Scene::init()
     mesh->sendToOpenGL(basicProgram);
     currentTime = 0.0f;
 
-    camera.init(2.0f);
+    camera.init(-2.0f);
     meshInstances_dim1 = 2;
-    setupScene();
+    setupMuseumScene();
 
     bPolygonFill = true;
-
 }
 
-void Scene::setupScene()
+void Scene::setupGridScene()
 {
+    for (int i = 0; i < nodes.size(); i++)
+    {
+        delete nodes[i];
+    }
+    nodes.clear();
+
     float x_step = mesh->getExtents().r * 5 / 4;
     float y_step = mesh->getExtents().g * 5 / 4;
 
@@ -45,9 +54,82 @@ void Scene::setupScene()
         {
             glm::mat4 model(1.0);
             model = glm::translate(model, glm::vec3(i, 0, j));
-            std::cout << i << ", J: " << j << std::endl;
             nodes.push_back(new Node(mesh, model));
         }
+    }
+}
+
+void Scene::setupMuseumScene()
+{
+    std::ifstream tilemap("../tilemap.tmx");
+
+    // get first 5 lines (headers)
+    std::string lineStr;
+    int gridWidth, gridHeight;
+    for (int i = 0; i < 5; i++)
+    {
+        std::getline(tilemap, lineStr);
+
+        // parse 3rd line (which contiains width/height information)
+        if (i == 3)
+        {
+            std::string word;
+            std::stringstream lineSS = std::stringstream(lineStr);
+            while (!lineSS.eof())
+            {
+                lineSS >> word;
+                if (word.find("width=") != std::string::npos)
+                {
+                    gridWidth = stoi(std::regex_replace(word, std::regex("[^0-9]*([0-9]+).*"), std::string("$1")));
+                }
+                if (word.find("height=") != std::string::npos)
+                {
+                    gridHeight = stoi(std::regex_replace(word, std::regex("[^0-9]*([0-9]+).*"), std::string("$1")));
+                }
+            }
+        }
+    }
+
+    // fill grid
+    int grid[gridWidth][gridHeight];
+    for (int i = 0; i < gridHeight; i++)
+    {
+        std::getline(tilemap, lineStr);
+        // std::cout << lineStr;
+        std::stringstream ss(lineStr);
+        int num_label;
+        for (int j = 0; j < gridWidth; j++)
+        {
+            ss >> num_label;
+            grid[i][j] = num_label;
+            if(ss.peek() == ',') ss.ignore();
+        }
+    }
+
+    tilemap.close();
+
+
+    float x_step = mesh->getExtents().r * 5 / 4;
+    float y_step = mesh->getExtents().g * 5 / 4;
+
+    int x = 0;
+    for (float i = x_step / 2 * (-gridWidth + 1); i <= (gridWidth + x_step) / 2; i += x_step)
+    {
+        int y = -1;
+        for (float j = y_step / 2 * (-gridHeight + 1); j <= (gridHeight + y_step) / 2; j += y_step)
+        {
+            y++;
+            // if (grid[90][48] != 1)
+            //     std::cout << x << "," << y << ": " << grid[x][y] << std::endl;
+
+            if (grid[x][y] == 1)
+                continue;
+
+            glm::mat4 model(1.0);
+            model = glm::translate(model, glm::vec3(i, 0, j));
+            nodes.push_back(new Node(mesh, model));
+        }
+        x++;
     }
 }
 
@@ -159,6 +241,7 @@ void Scene::switchPolygonMode()
 void Scene::setNumInstances(int numInstances_dim1)
 {
     this->meshInstances_dim1 = numInstances_dim1;
+    setupGridScene();
 }
 
 void Scene::initShaders()
