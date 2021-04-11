@@ -44,6 +44,7 @@ private:
     bool bPolygonFill;
 
     int meshInstances_dim1;
+    float gridStep;
 
     std::vector<Node *> nodes;
 };

@@ -10,6 +10,7 @@
 #include "Scene.h"
 #include "PLYReader.h"
 #include "Application.h"
+#include "Utils.h"
 
 Scene::Scene()
 {
@@ -30,8 +31,9 @@ void Scene::init()
     mesh->sendToOpenGL(basicProgram);
     currentTime = 0.0f;
 
-    camera.init(-2.0f);
+    camera.init(glm::vec3(0,0,-2));
     meshInstances_dim1 = 2;
+    gridStep = 1.5;
     setupMuseumScene();
 
     bPolygonFill = true;
@@ -102,32 +104,35 @@ void Scene::setupMuseumScene()
         {
             ss >> num_label;
             grid[i][j] = num_label;
-            if(ss.peek() == ',') ss.ignore();
+            if (ss.peek() == ',')
+                ss.ignore();
         }
     }
 
     tilemap.close();
 
 
-    float x_step = mesh->getExtents().r * 5 / 4;
-    float y_step = mesh->getExtents().g * 5 / 4;
-
+    float scaleFactor = gridStep / Utils::max3(mesh->getExtents());
     int x = 0;
-    for (float i = x_step / 2 * (-gridWidth + 1); i <= (gridWidth + x_step) / 2; i += x_step)
+    for (float i = gridStep / 2 * (-gridWidth + 1); i <= (gridWidth + gridStep) / 2; i += gridStep)
     {
         int y = -1;
-        for (float j = y_step / 2 * (-gridHeight + 1); j <= (gridHeight + y_step) / 2; j += y_step)
+        for (float j = gridStep / 2 * (-gridHeight + 1); j <= (gridHeight + gridStep) / 2; j += gridStep)
         {
             y++;
-            // if (grid[90][48] != 1)
-            //     std::cout << x << "," << y << ": " << grid[x][y] << std::endl;
+            
+            if (grid[x][y] != 1)
+            {
+                glm::mat4 model(1.0);
+                model = glm::translate(model, glm::vec3(i, 0, j));
+                model = glm::scale(model, glm::vec3(scaleFactor));
+                nodes.push_back(new Node(mesh, model));
 
-            if (grid[x][y] == 1)
-                continue;
-
-            glm::mat4 model(1.0);
-            model = glm::translate(model, glm::vec3(i, 0, j));
-            nodes.push_back(new Node(mesh, model));
+                if (grid[x][y] == 3)
+                {
+                    camera.init(glm::vec3(i, 1, j),0,0);
+                }
+            }
         }
         x++;
     }

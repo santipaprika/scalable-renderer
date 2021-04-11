@@ -13,7 +13,7 @@ public:
     Camera();
     ~Camera();
 
-    void init(float initDistance, float initAngleX = 0.0f, float initAngleY = 0.0f);
+    void init(glm::vec3 position, float initAngleX = 0.0f, float initAngleY = 0.0f);
 
     void resizeCameraViewport(int width, int height);
     void rotateCamera(float xRotation, float yRotation);

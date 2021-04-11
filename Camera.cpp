@@ -14,14 +14,14 @@ Camera::~Camera()
 {
 }
 
-void Camera::init(float initDistance, float initAngleX, float initAngleY)
+void Camera::init(glm::vec3 position, float initAngleX, float initAngleY)
 {
-    distance = initDistance;
+    distance = position.z;
     angleX = initAngleX;
     angleY = initAngleY;
     rangeDistanceCamera[0] = 1.0f;
     rangeDistanceCamera[1] = 3.0f;
-    position = glm::vec3(0.0f, 0.0f, -distance);
+    this->position = position;
     velocity = 2;
     rotationSpeed = 5;
 
