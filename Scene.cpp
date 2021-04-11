@@ -2,7 +2,6 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include <regex>
 #include <cmath>
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,6 +10,8 @@
 #include "PLYReader.h"
 #include "Application.h"
 #include "Utils.h"
+
+#define OUT
 
 Scene::Scene()
 {
@@ -65,59 +66,22 @@ void Scene::setupMuseumScene()
 {
     std::ifstream tilemap("../tilemap.tmx");
 
-    // get first 5 lines (headers)
-    std::string lineStr;
-    int gridWidth, gridHeight;
-    for (int i = 0; i < 5; i++)
-    {
-        std::getline(tilemap, lineStr);
-
-        // parse 3rd line (which contiains width/height information)
-        if (i == 3)
-        {
-            std::string word;
-            std::stringstream lineSS = std::stringstream(lineStr);
-            while (!lineSS.eof())
-            {
-                lineSS >> word;
-                if (word.find("width=") != std::string::npos)
-                {
-                    gridWidth = stoi(std::regex_replace(word, std::regex("[^0-9]*([0-9]+).*"), std::string("$1")));
-                }
-                if (word.find("height=") != std::string::npos)
-                {
-                    gridHeight = stoi(std::regex_replace(word, std::regex("[^0-9]*([0-9]+).*"), std::string("$1")));
-                }
-            }
-        }
-    }
+    glm::vec2 gridSize = Utils::getGridSize(tilemap);
 
     // fill grid
-    int grid[gridWidth][gridHeight];
-    for (int i = 0; i < gridHeight; i++)
-    {
-        std::getline(tilemap, lineStr);
-        // std::cout << lineStr;
-        std::stringstream ss(lineStr);
-        int num_label;
-        for (int j = 0; j < gridWidth; j++)
-        {
-            ss >> num_label;
-            grid[i][j] = num_label;
-            if (ss.peek() == ',')
-                ss.ignore();
-        }
-    }
-
+    int **grid = new int *[(int)gridSize.x];
+    for(int i = 0; i < (int)gridSize.x; i++)
+        grid[i] = new int[(int)gridSize.y];
+    
+    Utils::parseGrid(tilemap, OUT grid, gridSize);
     tilemap.close();
-
 
     float scaleFactor = gridStep / Utils::max3(mesh->getExtents());
     int x = 0;
-    for (float i = gridStep / 2 * (-gridWidth + 1); i <= (gridWidth + gridStep) / 2; i += gridStep)
+    for (float i = gridStep / 2 * (-gridSize.x + 1); i <= (gridSize.x * gridStep) / 2; i += gridStep)
     {
         int y = -1;
-        for (float j = gridStep / 2 * (-gridHeight + 1); j <= (gridHeight + gridStep) / 2; j += gridStep)
+        for (float j = gridStep / 2 * (-gridSize.y + 1); j <= (gridSize.y * gridStep) / 2; j += gridStep)
         {
             y++;
             
@@ -136,6 +100,10 @@ void Scene::setupMuseumScene()
         }
         x++;
     }
+
+    for (int i=0; i<gridSize.x; i++)
+        delete [] grid[i];
+    delete [] grid;
 }
 
 bool Scene::loadMesh(const char *filename)

@@ -90,6 +90,8 @@ static void mouseCallback(int button, int state, int x, int y)
     case GLUT_MIDDLE_BUTTON:
         buttonId = 2;
         break;
+    default:
+        return;
     }
 
     if (state == GLUT_DOWN)
