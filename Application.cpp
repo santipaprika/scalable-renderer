@@ -25,6 +25,8 @@ void Application::init()
     frameCount = 0;
     timeCounter = 0;
     framerate = 0;
+
+    cursorInGameMode = true;
 }
 
 bool Application::loadMesh(const char *filename)
@@ -99,14 +101,16 @@ void Application::specialKeyReleased(int key)
 void Application::mouseMove(int x, int y)
 {
     // Zoom
-    if (mouseButtons[1] && lastMousePos.x != -1)
-        glutSetCursor(GLUT_CURSOR_CROSSHAIR);
+    // if (mouseButtons[1] && lastMousePos.x != -1)
+    //     glutSetCursor(GLUT_CURSOR_CROSSHAIR);
 
     lastMousePos = glm::ivec2(x, y);
 }
 
 void Application::mousePassiveMove(int x, int y)
 {
+    if (!cursorInGameMode) return;
+
     glm::vec2 center((float)width / 2, (float)height / 2);
     glm::vec2 cameraAngle(-(y-center.y),-(x-center.x)); 
 
@@ -122,13 +126,19 @@ void Application::mousePassiveMove(int x, int y)
 void Application::mousePress(int button)
 {
     mouseButtons[button] = true;
+
 }
 
 void Application::mouseRelease(int button)
 {
     mouseButtons[button] = false;
-    if (!mouseButtons[0] && !mouseButtons[1])
-        lastMousePos = glm::ivec2(-1, -1);
+    if (button == mouseButtons[0])
+    {
+        lastMousePos = glm::ivec2(width/2.0f, height/2.0f);
+        cursorInGameMode = !cursorInGameMode;
+    
+        cursorInGameMode ? glutSetCursor( GLUT_CURSOR_NONE ) : glutSetCursor( GLUT_CURSOR_INHERIT );
+    }
 }
 
 bool Application::getKey(int key) const

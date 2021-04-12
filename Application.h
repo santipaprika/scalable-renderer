@@ -44,10 +44,10 @@ public:
 
     int width;
     int height;
+	Scene scene;                      // Scene to render
 
 private:
 	bool bPlay;                       // Continue?
-	Scene scene;                      // Scene to render
 	bool keys[256], specialKeys[256]; // Store key states so that 
 	                                  // we can have access at any time
 
@@ -62,7 +62,7 @@ private:
 
     float deltaTime;
 
-	                                  
+    bool cursorInGameMode;                                  
 };
 
 
