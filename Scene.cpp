@@ -15,21 +15,22 @@
 
 Scene::Scene()
 {
-    mesh = NULL;
+    cube = NULL;
 }
 
 Scene::~Scene()
 {
-    if (mesh != NULL)
-        delete mesh;
+    if (cube != NULL)
+        delete cube;
+    clearNodes();
 }
 
 void Scene::init()
 {
     initShaders();
-    mesh = new TriangleMesh();
-    mesh->buildCube();
-    mesh->sendToOpenGL(basicProgram);
+    cube = new TriangleMesh();
+    cube->buildCube();
+    cube->sendToOpenGL(basicProgram);
     currentTime = 0.0f;
 
     camera.init(glm::vec3(0,0,-2));
@@ -42,14 +43,10 @@ void Scene::init()
 
 void Scene::setupGridScene()
 {
-    for (int i = 0; i < nodes.size(); i++)
-    {
-        delete nodes[i];
-    }
-    nodes.clear();
+    clearNodes();
 
-    float x_step = mesh->getExtents().r * 5 / 4;
-    float y_step = mesh->getExtents().g * 5 / 4;
+    float x_step = cube->getExtents().r * 5 / 4;
+    float y_step = cube->getExtents().g * 5 / 4;
 
     for (float i = x_step / 2 * (-meshInstances_dim1 + 1); i <= (meshInstances_dim1 + x_step) / 2; i += x_step)
     {
@@ -57,26 +54,31 @@ void Scene::setupGridScene()
         {
             glm::mat4 model(1.0);
             model = glm::translate(model, glm::vec3(i, 0, j));
-            nodes.push_back(new Node(mesh, model));
+            nodes.push_back(new Node(cube, model));
         }
     }
 }
 
 void Scene::setupMuseumScene()
 {
+    clearNodes();
+
     std::ifstream tilemap("../tilemap.tmx");
+    string modelsPath[11] = {"bunny.ply", "dragon.ply", "frog.ply", "happy.ply", "horse.ply", "lucy.ply", "maxplanck.ply", "moai.ply", "sphere.ply", "tetrahedron.ply", "torus.ply"};
+    glm::vec2 surroundingDirs[4] = {glm::vec2(-1,0),glm::vec2(0,-1), glm::vec2(1,0), glm::vec2(0,1)};
 
     glm::vec2 gridSize = Utils::getGridSize(tilemap);
 
-    // fill grid
+    // initialize grid
     int **grid = new int *[(int)gridSize.x];
     for(int i = 0; i < (int)gridSize.x; i++)
         grid[i] = new int[(int)gridSize.y];
     
+    // fill grid
     Utils::parseGrid(tilemap, OUT grid, gridSize);
     tilemap.close();
 
-    float scaleFactor = gridStep / Utils::max3(mesh->getExtents());
+    float scaleFactor;
     int x = 0;
     for (float i = gridStep / 2 * (-gridSize.x + 1); i <= (gridSize.x * gridStep) / 2; i += gridStep)
     {
@@ -85,18 +87,51 @@ void Scene::setupMuseumScene()
         {
             y++;
             
-            if (grid[x][y] != 1)
+            if (grid[x][y] == Tile::NOTHING)
+                continue;
+            
+            glm::mat4 model(1.0);
+
+            // floor
+            scaleFactor = gridStep / Utils::max3(cube->getExtents());
+            model = glm::translate(model, glm::vec3(i, -gridStep/2.0f, j));
+            model = glm::scale(model, glm::vec3(scaleFactor));
+            model = glm::scale(model, glm::vec3(1,0.01,1));
+            nodes.push_back(new Node(cube, model));
+
+            // camera origin
+            if (grid[x][y] == Tile::ORIGIN)
+                camera.init(glm::vec3(i, 1, j),0,0);
+
+            // check for walls
+            for (glm::vec2 dir : surroundingDirs)
             {
-                glm::mat4 model(1.0);
+                if (grid[x+(int)dir.x][y+(int)dir.y] == Tile::NOTHING)
+                {
+                    model = glm::mat4(1.0);
+                    model = glm::translate(model, glm::vec3(i + gridStep/2.0f * dir.x, 0, j + gridStep/2.0f * dir.y));
+                    model = glm::scale(model, glm::vec3(scaleFactor));
+                    model = glm::scale(model, glm::vec3(1.0 - abs(dir.x) * 0.99, 1.0, 1.0 - abs(dir.y) * 0.99));
+                    nodes.push_back(new Node(cube, model));
+                }
+            }
+
+            // model
+            TriangleMesh* mesh;
+            model = glm::mat4(1.0);
+            if (grid[x][y] > Tile::ORIGIN)
+            {
+                if (grid[x][y] == Tile::CUBE)
+                    mesh = cube;
+                else
+                    mesh = TriangleMesh::Get("../models/" + modelsPath[grid[x][y]-(Tile::CUBE+1)]);
+                
+                scaleFactor = gridStep / Utils::max3(mesh->getExtents());
                 model = glm::translate(model, glm::vec3(i, 0, j));
                 model = glm::scale(model, glm::vec3(scaleFactor));
                 nodes.push_back(new Node(mesh, model));
-
-                if (grid[x][y] == 3)
-                {
-                    camera.init(glm::vec3(i, 1, j),0,0);
-                }
             }
+            
         }
         x++;
     }
@@ -110,11 +145,11 @@ bool Scene::loadMesh(const char *filename)
 {
     PLYReader reader;
 
-    mesh->free();
-    bool bSuccess = reader.readMesh(filename, *mesh);
+    cube->free();
+    bool bSuccess = reader.readMesh(filename, *cube);
     if (bSuccess)
-        mesh->computeAABB();
-    mesh->sendToOpenGL(basicProgram);
+        cube->computeAABB();
+    cube->sendToOpenGL(basicProgram);
 
     return bSuccess;
 }
@@ -128,10 +163,8 @@ void Scene::update(float deltaTime)
 
 void Scene::render()
 {
-    for (int i = 0; i < nodes.size(); i++)
+    for (Node* node : nodes)
     {
-        Node *node = nodes[i];
-
         basicProgram.use();
         basicProgram.setUniformMatrix4f("projection", camera.getProjectionMatrix());
         basicProgram.setUniformMatrix4f("view", camera.getModelViewMatrix());
@@ -215,6 +248,14 @@ void Scene::setNumInstances(int numInstances_dim1)
 {
     this->meshInstances_dim1 = numInstances_dim1;
     setupGridScene();
+}
+
+void Scene::clearNodes() 
+{
+    for (Node* node : nodes)
+        delete node;
+
+    nodes.clear();
 }
 
 void Scene::initShaders()

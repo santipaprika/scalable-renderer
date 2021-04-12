@@ -7,6 +7,10 @@
 #include "TriangleMesh.h"
 #include "Node.h"
 
+
+enum Tile {NOTHING, FLOOR, ORIGIN, CUBE, BUNNY, DRAGON, FROG, HAPPY, HORSE, LUCY, MAXPLANCK, MOAI, SPHERE, TETRAHEDRON, TORUS};
+
+
 // Scene contains all the entities of our game.
 // It is responsible for updating and render them.
 
@@ -28,8 +32,10 @@ public:
     Camera &getCamera();
 
     void switchPolygonMode();
-
     void setNumInstances(int numInstances_dim1);
+    void clearNodes();
+
+    ShaderProgram basicProgram;
 
 private:
     void initShaders();
@@ -37,8 +43,7 @@ private:
 
 private:
     Camera camera;
-    TriangleMesh *mesh;
-    ShaderProgram basicProgram;
+    TriangleMesh *cube;
     float currentTime;
 
     bool bPolygonFill;

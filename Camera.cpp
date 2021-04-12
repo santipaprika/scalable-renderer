@@ -54,7 +54,6 @@ void Camera::computeModelViewMatrix()
     modelview = glm::mat4(1.0f);
     modelview = glm::rotate(modelview, angleY / 180.f * PI, glm::vec3(0.0f, 1.0f, 0.0f));
     modelview = glm::rotate(modelview, angleX / 180.f * PI, glm::vec3(1.0f, 0.0f, 0.0f));
-    //modelview = glm::lookAt(position, position + glm::vec3(sin(angleY),0,cos(angleY)), glm::vec3(0,1,0));
     modelview[3][0] = position[0];
     modelview[3][1] = position[1];
     modelview[3][2] = position[2];
