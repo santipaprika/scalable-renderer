@@ -78,49 +78,50 @@ void Scene::setupMuseumScene()
 
     tilemap.close();
 
-    int x = 0;
-    for (float i = gridStep / 2 * (-gridSize.x + 1); i <= (gridSize.x * gridStep) / 2; i += gridStep)
+    int y = 0;
+    for (float i = gridStep / 2 * (-gridSize.y + 1); i <= (gridSize.y * gridStep) / 2; i += gridStep)
     {
-        int y = -1;
-        for (float j = gridStep / 2 * (-gridSize.y + 1); j <= (gridSize.y * gridStep) / 2; j += gridStep)
+        int x = -1;
+        for (float j = gridStep / 2 * (-gridSize.x + 1); j <= (gridSize.x * gridStep) / 2; j += gridStep)
         {
-            y++;
+            x++;
 
-            if (grid[x][y] == Tile::NOTHING)
+            if (grid[y][x] == Tile::NOTHING)
                 continue;
 
             glm::mat4 model(1.0);
 
             // floor
-            addNode(cube, glm::vec3(i, -gridStep / 2.0f, j), glm::vec3(1, 0.01, 1));
+            addNode(cube, glm::vec3(j, -gridStep / 2.0f, i), glm::vec3(1, 0.01, 1));
 
             // camera origin
-            if (grid[x][y] == Tile::ORIGIN)
-                camera.init(glm::vec3(i, 1, j), 0, 0);
+            if (grid[y][x] == Tile::ORIGIN)
+                camera.init(glm::vec3(j, 1, i), 0, 0);
 
             // check for walls
             for (glm::vec2 dir : surroundingDirs)
             {
-                if (grid[x + (int)dir.x][y + (int)dir.y] == Tile::NOTHING)
+                if (grid[y + (int)dir.y][x + (int)dir.x] == Tile::NOTHING)
                 {
-                    addNode(cube, glm::vec3(i + gridStep / 2.0f * dir.x, gridStep * 1, j + gridStep / 2.0f * dir.y),
+                    addNode(cube, glm::vec3(j + gridStep / 2.0f * dir.x, gridStep * 1, i + gridStep / 2.0f * dir.y),
                                          glm::vec3(1.0 - abs(dir.x) * 0.99, 3.0, 1.0 - abs(dir.y) * 0.99));
                 }
             }
 
+
             // model
             TriangleMesh *mesh;
-            if (grid[x][y] > Tile::ORIGIN)
+            if (grid[y][x] > Tile::ORIGIN)
             {
-                if (grid[x][y] == Tile::CUBE)
+                if (grid[y][x] == Tile::CUBE)
                     mesh = cube;
                 else
-                    mesh = TriangleMesh::Get("../models/" + modelsPath[grid[x][y] - (Tile::CUBE + 1)]);
+                    mesh = TriangleMesh::Get("../models/" + modelsPath[grid[y][x] - (Tile::CUBE + 1)]);
 
-                addNode(mesh, glm::vec3(i, 0, j));
+                addNode(mesh, glm::vec3(j, 0, i));
             }
         }
-        x++;
+        y++;
     }
 
     Utils::deletePointerMatrix(grid, gridSize.x, gridSize.y);

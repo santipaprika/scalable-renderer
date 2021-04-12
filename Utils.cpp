@@ -40,17 +40,20 @@ glm::vec2 Utils::getGridSize(std::ifstream &tilemap)
     return gridSize;
 }
 
-void Utils::parseGrid(std::ifstream &tilemap, int **grid, glm::vec2 gridSize)
+void Utils::parseGrid(std::ifstream &tilemap, int **&grid, glm::vec2 gridSize)
 {
-    std::string lineStr;
     for (int i = 0; i < gridSize.y; i++)
     {
+        std::string lineStr;
+
         std::getline(tilemap, lineStr);
+
         // std::cout << lineStr;
         std::stringstream ss(lineStr);
         int num_label;
         for (int j = 0; j < gridSize.x; j++)
         {
+            // std::cout << gridSize.x << std::endl;
             ss >> num_label;
             grid[i][j] = num_label-1;
             if (ss.peek() == ',')
@@ -61,15 +64,15 @@ void Utils::parseGrid(std::ifstream &tilemap, int **grid, glm::vec2 gridSize)
 
 void Utils::initializePointerMatrix(int** &pointerArray, int sizeX, int sizeY) 
 {
-    pointerArray = new int *[sizeX];
+    pointerArray = new int *[sizeY];
 
-    for (int i = 0; i < sizeX; i++)
-        pointerArray[i] = new int[sizeY];
+    for (int i = 0; i < sizeY; i++)
+        pointerArray[i] = new int[sizeX];
 }
 
 void Utils::deletePointerMatrix(int** &pointerArray, int sizeX, int sizeY) 
 {
-    for (int i = 0; i < sizeX; i++)
+    for (int i = 0; i < sizeY; i++)
         delete[] pointerArray[i];
     delete[] pointerArray;
 }
