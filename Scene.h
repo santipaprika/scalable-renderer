@@ -34,6 +34,8 @@ public:
     void switchPolygonMode();
     void setNumInstances(int numInstances_dim1);
     void clearNodes();
+    
+    void addNode(TriangleMesh* mesh, glm::vec3 translation=glm::vec3(0.0f), glm::vec3 scale=glm::vec3(1.0));
 
     ShaderProgram basicProgram;
 

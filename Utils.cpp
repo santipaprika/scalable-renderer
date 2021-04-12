@@ -1,6 +1,7 @@
 #include "Utils.h"
 #include <algorithm>
 #include <regex>
+#include <iostream>
 
 float Utils::max3(glm::vec3 v)
 {
@@ -56,4 +57,19 @@ void Utils::parseGrid(std::ifstream &tilemap, int **grid, glm::vec2 gridSize)
                 ss.ignore();
         }
     }
+}
+
+void Utils::initializePointerMatrix(int** &pointerArray, int sizeX, int sizeY) 
+{
+    pointerArray = new int *[sizeX];
+
+    for (int i = 0; i < sizeX; i++)
+        pointerArray[i] = new int[sizeY];
+}
+
+void Utils::deletePointerMatrix(int** &pointerArray, int sizeX, int sizeY) 
+{
+    for (int i = 0; i < sizeX; i++)
+        delete[] pointerArray[i];
+    delete[] pointerArray;
 }
