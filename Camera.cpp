@@ -19,6 +19,8 @@ void Camera::init(glm::vec3 position, float initAngleX, float initAngleY)
     distance = position.z;
     angleX = initAngleX;
     angleY = initAngleY;
+    near = 0.01f;
+    far = 200.0f;
     rangeDistanceCamera[0] = 1.0f;
     rangeDistanceCamera[1] = 3.0f;
     this->position = position;
@@ -31,7 +33,7 @@ void Camera::init(glm::vec3 position, float initAngleX, float initAngleY)
 
 void Camera::resizeCameraViewport(int width, int height)
 {
-    projection = glm::perspective(60.f / 180.f * PI, float(width) / float(height), 0.01f, 100.0f);
+    projection = glm::perspective(60.f / 180.f * PI, float(width) / float(height), near, far);
 }
 
 void Camera::rotateCamera(float xRotation, float yRotation)

@@ -24,7 +24,7 @@ public:
     glm::mat4 &getModelViewMatrix();
 
     bool sprint;
-    
+
 private:
     void computeModelViewMatrix();
 
@@ -37,6 +37,10 @@ private:
 
     float rotationSpeed;
     float rangeDistanceCamera[2];
+
+    float near;
+    float far;
+    
     glm::mat4 projection, modelview; // OpenGL matrices
 };
 
