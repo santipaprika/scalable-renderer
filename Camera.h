@@ -23,13 +23,18 @@ public:
     glm::mat4 &getProjectionMatrix();
     glm::mat4 &getModelViewMatrix();
 
+    bool sprint;
+    
 private:
     void computeModelViewMatrix();
 
 private:
     float angleX, angleY, distance; // Camera parameters
     glm::vec3 position;
+
     float velocity;
+    float sprintVelocity;
+
     float rotationSpeed;
     float rangeDistanceCamera[2];
     glm::mat4 projection, modelview; // OpenGL matrices

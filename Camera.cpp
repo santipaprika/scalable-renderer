@@ -22,7 +22,8 @@ void Camera::init(glm::vec3 position, float initAngleX, float initAngleY)
     rangeDistanceCamera[0] = 1.0f;
     rangeDistanceCamera[1] = 3.0f;
     this->position = position;
-    velocity = 2;
+    velocity = 6;
+    sprintVelocity = 20;
     rotationSpeed = 5;
 
     computeModelViewMatrix();
@@ -63,7 +64,7 @@ void Camera::computeModelViewMatrix()
 
 void Camera::move(glm::vec3 delta_direction)
 {
-    glm::vec3 moveAmount = (-delta_direction * velocity);
+    glm::vec3 moveAmount = (-delta_direction * (sprint ? sprintVelocity : velocity));
     glm::vec4 moveAmountH(moveAmount, 1.0f);
     moveAmountH = glm::inverse(modelview) * moveAmountH;
     position = glm::vec3(moveAmountH);

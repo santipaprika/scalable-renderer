@@ -109,9 +109,9 @@ void Scene::setupMuseumScene()
                 if (grid[x+(int)dir.x][y+(int)dir.y] == Tile::NOTHING)
                 {
                     model = glm::mat4(1.0);
-                    model = glm::translate(model, glm::vec3(i + gridStep/2.0f * dir.x, 0, j + gridStep/2.0f * dir.y));
+                    model = glm::translate(model, glm::vec3(i + gridStep/2.0f * dir.x, gridStep * 1, j + gridStep/2.0f * dir.y));
                     model = glm::scale(model, glm::vec3(scaleFactor));
-                    model = glm::scale(model, glm::vec3(1.0 - abs(dir.x) * 0.99, 1.0, 1.0 - abs(dir.y) * 0.99));
+                    model = glm::scale(model, glm::vec3(1.0 - abs(dir.x) * 0.99, 3.0, 1.0 - abs(dir.y) * 0.99));
                     nodes.push_back(new Node(cube, model));
                 }
             }
@@ -193,6 +193,8 @@ void Scene::render()
 
 void Scene::updateKeyPressedEvents(float deltaTime)
 {
+    camera.sprint = Application::instance().getKey(' ');
+    
     enum
     {
         LEFT_KEY = 'a',
