@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
+#include <unordered_map>
 #include "ShaderProgram.h"
 
 
@@ -32,6 +33,9 @@ public:
 	void computeAABB();
 	glm::vec3 getExtents() const;
 
+    static TriangleMesh* Get(string path);
+    static unordered_map<string, TriangleMesh*> meshes;
+
 private:
   vector<glm::vec3> vertices;
   vector<int> triangles;
@@ -43,7 +47,6 @@ private:
 	glm::vec3 minAABB;
 	glm::vec3 maxAABB;
 
-	
 };
 
 
