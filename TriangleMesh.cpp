@@ -122,6 +122,18 @@ glm::vec3 TriangleMesh::getExtents() const
     return maxAABB - minAABB;
 }
 
+void TriangleMesh::computeLODs(int depth) 
+{
+    // extend AABB to avoid vertex coincidence
+    glm::vec3 minAABBextended = minAABB - glm::vec3(0.001f);
+	glm::vec3 maxAABBextended = maxAABB + glm::vec3(0.001f);
+
+    for (int i = 0; i < depth; i++)
+    {
+        // for (int w )
+    }
+}
+
 unordered_map<string, TriangleMesh*> TriangleMesh::meshes = {};
 TriangleMesh *TriangleMesh::Get(string filename)
 {
