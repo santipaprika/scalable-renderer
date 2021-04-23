@@ -65,8 +65,6 @@ static void motionCallback(int x, int y)
 
 static void passiveMotionCallback(int x, int y)
 {
-    // ImGui_ImplGLUT_PassiveMotionFunc(x, y);
-    // if (ImGui::GetIO().WantCaptureMouse) return;
     Application::instance().mousePassiveMove(x, y);
 }
 
@@ -119,14 +117,12 @@ static void drawCallback()
     ImGui_ImplGLUT_NewFrame();
 
     Application::instance().render();
-    ImGui::ShowDemoWindow();
     
     // Rendering
     ImGui::Render();
     ImGuiIO &io = ImGui::GetIO();
     glViewport(0, 0, (GLsizei)io.DisplaySize.x, (GLsizei)io.DisplaySize.y);
-    // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-    // glClear(GL_COLOR_BUFFER_BIT);
+
     glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound, but prefer using the GL3+ code.
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
