@@ -153,7 +153,7 @@ void Scene::render()
     {
         basicProgram.use();
         basicProgram.setUniformMatrix4f("projection", camera.getProjectionMatrix());
-        basicProgram.setUniformMatrix4f("view", camera.getModelViewMatrix());
+        basicProgram.setUniformMatrix4f("view", camera.getInvModelViewMatrix());
         basicProgram.setUniformMatrix4f("model", node->getModel());
 
         basicProgram.setUniform1i("bLighting", bPolygonFill ? 1 : 0);

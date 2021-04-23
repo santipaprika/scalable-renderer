@@ -60,22 +60,15 @@ void Camera::computeModelViewMatrix()
     modelview[3][0] = position[0];
     modelview[3][1] = position[1];
     modelview[3][2] = position[2];
-    modelview = glm::inverse(modelview);
-
+    modelview_inv = glm::inverse(modelview);
 }
 
 void Camera::move(glm::vec3 delta_direction)
 {
     glm::vec3 moveAmount = (-delta_direction * (sprint ? sprintVelocity : velocity));
     glm::vec4 moveAmountH(moveAmount, 1.0f);
-    moveAmountH = glm::inverse(modelview) * moveAmountH;
+    moveAmountH = modelview * moveAmountH;
     position = glm::vec3(moveAmountH);
-
-    // if (delta_direction.y != 0)
-    //     position = glm::vec3(0, moveAmountH.y, 0);
-    // else
-    //     position = glm::vec3(moveAmountH.x, 0, moveAmountH.z);
-
 
     computeModelViewMatrix();
 }
@@ -88,4 +81,9 @@ glm::mat4 &Camera::getProjectionMatrix()
 glm::mat4 &Camera::getModelViewMatrix()
 {
     return modelview;
+}
+
+glm::mat4& Camera::getInvModelViewMatrix() 
+{
+    return modelview_inv;
 }

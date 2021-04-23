@@ -22,6 +22,7 @@ public:
 
     glm::mat4 &getProjectionMatrix();
     glm::mat4 &getModelViewMatrix();
+    glm::mat4 &getInvModelViewMatrix();
 
     bool sprint;
 
@@ -41,7 +42,7 @@ private:
     float near;
     float far;
     
-    glm::mat4 projection, modelview; // OpenGL matrices
+    glm::mat4 projection, modelview, modelview_inv; // OpenGL matrices
 };
 
 #endif // _CAMERA_INCLUDE
