@@ -4,8 +4,11 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
 #include <unordered_map>
 #include "ShaderProgram.h"
+#include "Octree.h"
 
 using namespace std;
 
@@ -32,7 +35,6 @@ public:
     void computeLODs(int depth);
 
     static TriangleMesh *Get(string path);
-    static unordered_map<string, TriangleMesh *> meshes;
 
 private:
     vector<glm::vec3> vertices;
@@ -44,6 +46,8 @@ private:
 
     glm::vec3 minAABB;
     glm::vec3 maxAABB;
+
+    static unordered_map<string, TriangleMesh *> meshes;
 };
 
 #endif // _TRIANGLE_MESH_INCLUDE

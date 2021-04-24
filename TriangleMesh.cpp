@@ -148,6 +148,7 @@ TriangleMesh *TriangleMesh::Get(string filename)
         mesh->computeAABB();
         mesh->sendToOpenGL(Application::instance().scene.basicProgram);
         meshes[filename] = mesh;
+        Octree* octree = new Octree(mesh->vertices, 8, mesh->minAABB, mesh->maxAABB, nullptr);
     }
 
     return mesh;
