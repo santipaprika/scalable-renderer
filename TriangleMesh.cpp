@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <set>
 #include "TriangleMesh.h"
 #include "PLYReader.h"
 #include "Scene.h"
@@ -21,6 +22,12 @@ void TriangleMesh::addTriangle(int v0, int v1, int v2)
     triangles.push_back(v0);
     triangles.push_back(v1);
     triangles.push_back(v2);
+}
+
+void TriangleMesh::initializeMesh() 
+{
+    computeAABB();
+    sendToOpenGL(Application::instance().scene.basicProgram);
 }
 
 void TriangleMesh::buildCube()
@@ -103,8 +110,8 @@ void TriangleMesh::free()
 
 void TriangleMesh::computeAABB()
 {
-    minAABB = glm::vec3(INFINITY, INFINITY, INFINITY);
-    maxAABB = glm::vec3(0, 0, 0);
+    minAABB = glm::vec3(INFINITY);
+    maxAABB = glm::vec3(-INFINITY);
     for (int i = 0; i < vertices.size(); i++)
     {
         minAABB.x = min(minAABB.x, vertices[i].x);
@@ -122,27 +129,77 @@ glm::vec3 TriangleMesh::getExtents() const
     return maxAABB - minAABB;
 }
 
-void TriangleMesh::computeLODs(Octree *octree, int depth)
+TriangleMesh* TriangleMesh::computeLODs(Octree *octree)
 {
-    // extend AABB to avoid vertex coincidence
-    glm::vec3 minAABBextended = minAABB - glm::vec3(0.001f);
-    glm::vec3 maxAABBextended = maxAABB + glm::vec3(0.001f);
+    Octree *vertexOctree[vertices.size()];
 
-    // build topology relation V:{F}
-    TriangleMesh *LODs[depth];
-    std::vector<Octree *> octs;
-
-    octree->getOctreesAtDepth(OUT octs, 4); //test at depth 4
-
-    for (int i = depth; i >= 0; i--)
+    for (int i=0; i<vertices.size(); i++)
     {
+        vertexOctree[i] = octree->evaluateVertex(vertices[i]);
     }
+
+    // this will store the index of the new vertices created from the ones inside each octree
+    std::unordered_map<Octree*, int> octreeIdxDict;
+
+    TriangleMesh* LOD = new TriangleMesh();
+
+    int count = 0;
+    for (int i=0; i <vertices.size(); i++)
+    {
+        // Octree idx is not present
+        if (octreeIdxDict.find(vertexOctree[i]) == octreeIdxDict.end())
+        {
+            // add vertex coordinate
+            LOD->addVertex(vertexOctree[i]->getAvgPosition());
+
+            // store the index of the new vertex inserted above
+            octreeIdxDict[vertexOctree[i]] = count;
+            count++;
+        }
+
+    }
+    std::cout << count << std::endl;
+
+    std::vector<glm::vec3> faces;
+    for (int i = 0; i < LOD->vertices.size(); i += 3)
+    {
+        glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[i]], octreeIdxDict[vertexOctree[i+1]], octreeIdxDict[vertexOctree[i+2]]);
+
+        // Face vertices
+        if (face.x == face.y || face.x == face.z || face.y == face.z)
+            continue;
+
+        bool faceExists = false;
+        for (glm::vec3 existingFace : faces)
+        {
+            // those will be integer indices, so we are safe at epsilon = 0.001
+            if ((face - existingFace).length() < 0.001f || ((glm::vec3(face.z, face.x, face.y)-existingFace).length() < 0.001f) || ((glm::vec3(face.y, face.z, face.x)-existingFace).length() < 0.001f))
+                faceExists = true;
+        }
+
+        if (faceExists)
+            continue;
+
+        LOD->addTriangle(face.x, face.y, face.z);
+        faces.push_back(face);
+    }
+
+    delete octree;
+
+    
+    for (glm::vec3 face : faces)
+    {
+        LOD->addTriangle((int)face.x, (int)face.y, (int)face.z);
+    }
+
+    LOD->initializeMesh();
+
+    return LOD;
 }
 
 unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
 TriangleMesh *TriangleMesh::Get(string filename)
 {
-
     if (meshes.find(filename) != meshes.end())
         return meshes.at(filename);
 
@@ -150,11 +207,10 @@ TriangleMesh *TriangleMesh::Get(string filename)
     bool bSuccess = PLYReader::readMesh(filename, (*mesh));
     if (bSuccess)
     {
-        mesh->computeAABB();
-        mesh->sendToOpenGL(Application::instance().scene.basicProgram);
+        mesh->initializeMesh();
         meshes[filename] = mesh;
-        Octree *octree = new Octree(mesh->vertices, 8, mesh->minAABB, mesh->maxAABB, nullptr);
-        mesh->computeLODs(octree, 8);
+        Octree *octree = new Octree(6, mesh->minAABB - glm::vec3(0.001f), mesh->maxAABB + glm::vec3(0.001f));
+        meshes[filename] = mesh->computeLODs(octree);
     }
 
     return mesh;

@@ -24,6 +24,7 @@ public:
 
     void addVertex(const glm::vec3 &position);
     void addTriangle(int v0, int v1, int v2);
+    void initializeMesh();
 
     void buildCube();
 
@@ -34,7 +35,7 @@ public:
     void computeAABB();
     glm::vec3 getExtents() const;
 
-    void computeLODs(Octree *octree, int depth);
+    TriangleMesh* computeLODs(Octree *octree);
 
     static TriangleMesh *Get(string path);
 
