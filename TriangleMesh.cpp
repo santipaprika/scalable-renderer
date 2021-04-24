@@ -107,13 +107,13 @@ void TriangleMesh::computeAABB()
     maxAABB = glm::vec3(0, 0, 0);
     for (int i = 0; i < vertices.size(); i++)
     {
-        minAABB.r = min(minAABB.r, vertices[i].r);
-        minAABB.g = min(minAABB.g, vertices[i].g);
-        minAABB.b = min(minAABB.b, vertices[i].b);
+        minAABB.x = min(minAABB.x, vertices[i].x);
+        minAABB.y = min(minAABB.y, vertices[i].y);
+        minAABB.z = min(minAABB.z, vertices[i].z);
 
-        maxAABB.r = max(maxAABB.r, vertices[i].r);
-        maxAABB.g = max(maxAABB.g, vertices[i].g);
-        maxAABB.b = max(maxAABB.b, vertices[i].b);
+        maxAABB.x = max(maxAABB.x, vertices[i].x);
+        maxAABB.y = max(maxAABB.y, vertices[i].y);
+        maxAABB.z = max(maxAABB.z, vertices[i].z);
     }
 }
 
@@ -122,19 +122,24 @@ glm::vec3 TriangleMesh::getExtents() const
     return maxAABB - minAABB;
 }
 
-void TriangleMesh::computeLODs(int depth) 
+void TriangleMesh::computeLODs(Octree *octree, int depth)
 {
     // extend AABB to avoid vertex coincidence
     glm::vec3 minAABBextended = minAABB - glm::vec3(0.001f);
-	glm::vec3 maxAABBextended = maxAABB + glm::vec3(0.001f);
+    glm::vec3 maxAABBextended = maxAABB + glm::vec3(0.001f);
 
-    for (int i = 0; i < depth; i++)
+    // build topology relation V:{F}
+    TriangleMesh *LODs[depth];
+    std::vector<Octree *> octs;
+
+    octree->getOctreesAtDepth(OUT octs, 4); //test at depth 4
+
+    for (int i = depth; i >= 0; i--)
     {
-        // for (int w )
     }
 }
 
-unordered_map<string, TriangleMesh*> TriangleMesh::meshes = {};
+unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
 TriangleMesh *TriangleMesh::Get(string filename)
 {
 
@@ -148,7 +153,8 @@ TriangleMesh *TriangleMesh::Get(string filename)
         mesh->computeAABB();
         mesh->sendToOpenGL(Application::instance().scene.basicProgram);
         meshes[filename] = mesh;
-        Octree* octree = new Octree(mesh->vertices, 8, mesh->minAABB, mesh->maxAABB, nullptr);
+        Octree *octree = new Octree(mesh->vertices, 8, mesh->minAABB, mesh->maxAABB, nullptr);
+        mesh->computeLODs(octree, 8);
     }
 
     return mesh;

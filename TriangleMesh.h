@@ -10,6 +10,8 @@
 #include "ShaderProgram.h"
 #include "Octree.h"
 
+#define OUT
+
 using namespace std;
 
 // Class TriangleMesh renders a very simple room with textures
@@ -32,7 +34,7 @@ public:
     void computeAABB();
     glm::vec3 getExtents() const;
 
-    void computeLODs(int depth);
+    void computeLODs(Octree *octree, int depth);
 
     static TriangleMesh *Get(string path);
 

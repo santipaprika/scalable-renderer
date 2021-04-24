@@ -39,3 +39,6 @@ build/
 
 # Models folder
 models/
+
+# vscode folder
+.vscode/
