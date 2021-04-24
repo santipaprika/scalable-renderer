@@ -24,7 +24,6 @@ public:
     void init();
     void setupGridScene();
     void setupMuseumScene();
-    bool loadMesh(const char *filename);
     void update(float deltaTime);
     void render();
     void updateKeyPressedEvents(float deltaTime);

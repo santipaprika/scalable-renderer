@@ -127,18 +127,6 @@ void Scene::setupMuseumScene()
     Utils::deletePointerMatrix(grid, gridSize.x, gridSize.y);
 }
 
-bool Scene::loadMesh(const char *filename)
-{
-    PLYReader reader;
-
-    cube->free();
-    bool bSuccess = reader.readMesh(filename, *cube);
-    if (bSuccess)
-        cube->computeAABB();
-    cube->sendToOpenGL(basicProgram);
-
-    return bSuccess;
-}
 
 void Scene::update(float deltaTime)
 {

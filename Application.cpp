@@ -29,11 +29,6 @@ void Application::init()
     cursorInGameMode = true;
 }
 
-bool Application::loadMesh(const char *filename)
-{
-    return scene.loadMesh(filename);
-}
-
 bool Application::update(int deltaTime)
 {
     this->deltaTime = deltaTime/1000.;
@@ -56,7 +51,7 @@ void Application::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     scene.render();
-    // std::cout << framerate;
+
     ImGui::Begin("Framerate");
     ImGui::Text("ImGui FR: %.1f FPS", ImGui::GetIO().Framerate);
     ImGui::Text("Computed FR: %.1f FPS", framerate);

@@ -48,12 +48,10 @@ void Utils::parseGrid(std::ifstream &tilemap, int **&grid, glm::vec2 gridSize)
 
         std::getline(tilemap, lineStr);
 
-        // std::cout << lineStr;
         std::stringstream ss(lineStr);
         int num_label;
         for (int j = 0; j < gridSize.x; j++)
         {
-            // std::cout << gridSize.x << std::endl;
             ss >> num_label;
             grid[i][j] = num_label-1;
             if (ss.peek() == ',')
