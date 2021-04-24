@@ -87,3 +87,8 @@ glm::mat4& Camera::getInvModelViewMatrix()
 {
     return modelview_inv;
 }
+
+glm::vec3 Camera::getPosition() 
+{
+    return glm::vec3(modelview[3][0], modelview[3][1], modelview[3][2]);
+}

@@ -24,6 +24,8 @@ public:
     glm::mat4 &getModelViewMatrix();
     glm::mat4 &getInvModelViewMatrix();
 
+    glm::vec3 getPosition();
+
     bool sprint;
 
 private:
