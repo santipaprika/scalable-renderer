@@ -44,6 +44,10 @@ public:
     int width;
     int height;
 	Scene scene;                      // Scene to render
+    
+    // Flags
+    bool bDrawPoints;
+	bool bPolygonFill;                // Draw filled faces or wireframe
 
 private:
 	bool bPlay;                       // Continue?
@@ -53,7 +57,6 @@ private:
 	glm::ivec2 lastMousePos;          // Last Mouse position
 	bool mouseButtons[3];             // State of mouse buttons
 
-	bool bPolygonFill;                // Draw filled faces or wireframe
 
 	int frameCount;
 	int timeCounter;				  // Time in ms

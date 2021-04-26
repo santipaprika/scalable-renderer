@@ -27,6 +27,7 @@ void Application::init()
     framerate = 0;
 
     cursorInGameMode = true;
+    bDrawPoints = false;
 }
 
 bool Application::update(int deltaTime)
@@ -55,6 +56,7 @@ void Application::render()
     ImGui::Begin("Framerate");
     ImGui::Text("ImGui FR: %.1f FPS", ImGui::GetIO().Framerate);
     ImGui::Text("Computed FR: %.1f FPS", framerate);
+    ImGui::Checkbox("Render points", &bDrawPoints);
     ImGui::End();
 }
 
