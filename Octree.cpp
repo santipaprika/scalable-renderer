@@ -5,11 +5,11 @@
 #include <glm/gtx/string_cast.hpp>
 
 
-Octree::Octree(int maxDepth, glm::vec3 minAABB, glm::vec3 maxAABB, Octree *parent)
+Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent)
 {
     this->maxDepth = maxDepth;
     this->minAABB = minAABB;
-    this->maxAABB = maxAABB;
+    this->halfLength = halfLength;
 
     this->parent = parent;
 
@@ -19,8 +19,14 @@ Octree::Octree(int maxDepth, glm::vec3 minAABB, glm::vec3 maxAABB, Octree *paren
     }
 
     meanPosition = glm::vec3(0.0f);
+    addedPosition = glm::vec3(0.0f);
     nVertices = 0;
+
+    idx = counter;
+    counter++;
 }
+
+int Octree::counter;
 
 Octree::~Octree()
 {
@@ -31,7 +37,7 @@ Octree::~Octree()
     // delete this;
 }
 
-glm::vec3 Octree::getAvgPosition()
+glm::vec3 Octree::getAvgPosition() const
 {
     return meanPosition;
 }
@@ -39,26 +45,41 @@ glm::vec3 Octree::getAvgPosition()
 Octree* Octree::evaluateVertex(glm::vec3 vertex)
 {
     // add vertex contribution
-    meanPosition = (meanPosition * (float)nVertices + vertex) / ((float)(nVertices+1));
+    addedPosition += vertex;
     nVertices++;
     
     // check if has reached maximum depth
     if (maxDepth == 0)
         return this;
 
-    glm::vec3 extents = maxAABB - minAABB;
+    // vertex vector = vertex - AABB center
+    glm::vec3 vertexVec = vertex - (minAABB + halfLength);
 
     // assign vertex to its corresponding subtree
-    bool x = vertex.x > (minAABB.x + extents.x / 2.0f); // Is at right half
-    bool y = vertex.y > (minAABB.y + extents.y / 2.0f); // Is at top half
-    bool z = vertex.z > (minAABB.z + extents.z / 2.0f); // Is at front half
+    bool x = vertexVec.x > 0; // Is at right half
+    bool y = vertexVec.y > 0; // Is at top half
+    bool z = vertexVec.z > 0; // Is at front half
     
     if (!childs[z * 4 + y * 2 + x])
     {
-        glm::vec3 minAABBchild = minAABB + glm::vec3(x*extents.x/2.0f, y*extents.y/2.0f, z*extents.z/2.0f);
-        glm::vec3 maxAABBchild = minAABB + extents/2.0f + glm::vec3(x*extents.x/2.0f, y*extents.y/2.0f, z*extents.z/2.0f);
-        childs[z * 4 + y * 2 + x] = new Octree(maxDepth-1, minAABBchild, maxAABBchild, this); 
+        glm::vec3 minAABBchild = minAABB + glm::vec3(x,y,z) * halfLength;
+        childs[z * 4 + y * 2 + x] = new Octree(maxDepth-1, minAABBchild, halfLength/2.0f, this); 
     }
 
     return childs[z * 4 + y * 2 + x]->evaluateVertex(vertex);
+}
+
+int Octree::getIndex() const
+{
+    return idx;
+}
+
+void Octree::computeMeanPositions()
+{
+    for (int i=0; i<8; i++)
+    {
+        if (childs[i])
+            childs[i]->computeMeanPositions();
+    }
+    meanPosition = addedPosition / (float)nVertices;
 }

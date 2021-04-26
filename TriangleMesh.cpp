@@ -96,7 +96,7 @@ void TriangleMesh::render() const
     glBindVertexArray(vao);
     glEnableVertexAttribArray(posLocation);
     glEnableVertexAttribArray(normalLocation);
-    glDrawArrays(GL_TRIANGLES, 0, 3 * 2 * 3 * triangles.size() / 3);
+    glDrawArrays((Application::instance().bDrawPoints) ? GL_POINTS : GL_TRIANGLES, 0, 3 * 2 * 3 * triangles.size() / 3);
 }
 
 void TriangleMesh::free()
@@ -131,15 +131,16 @@ glm::vec3 TriangleMesh::getExtents() const
 
 TriangleMesh* TriangleMesh::computeLODs(Octree *octree)
 {
-    Octree *vertexOctree[vertices.size()];
+    Octree *vertexOctree[vertices.size()] = {};
 
     for (int i=0; i<vertices.size(); i++)
     {
         vertexOctree[i] = octree->evaluateVertex(vertices[i]);
     }
+    octree->computeMeanPositions();
 
     // this will store the index of the new vertices created from the ones inside each octree
-    std::unordered_map<Octree*, int> octreeIdxDict;
+    std::unordered_map<int, int> octreeIdxDict;
 
     TriangleMesh* LOD = new TriangleMesh();
 
@@ -147,50 +148,44 @@ TriangleMesh* TriangleMesh::computeLODs(Octree *octree)
     for (int i=0; i <vertices.size(); i++)
     {
         // Octree idx is not present
-        if (octreeIdxDict.find(vertexOctree[i]) == octreeIdxDict.end())
+        if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end())
         {
             // add vertex coordinate
             LOD->addVertex(vertexOctree[i]->getAvgPosition());
 
             // store the index of the new vertex inserted above
-            octreeIdxDict[vertexOctree[i]] = count;
+            octreeIdxDict[vertexOctree[i]->getIndex()] = count;
             count++;
         }
-
     }
+
     std::cout << count << std::endl;
 
     std::vector<glm::vec3> faces;
     for (int i = 0; i < LOD->vertices.size(); i += 3)
     {
-        glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[i]], octreeIdxDict[vertexOctree[i+1]], octreeIdxDict[vertexOctree[i+2]]);
+        glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[i]->getIndex()], octreeIdxDict[vertexOctree[i+1]->getIndex()], octreeIdxDict[vertexOctree[i+2]->getIndex()]);
 
         // Face vertices
         if (face.x == face.y || face.x == face.z || face.y == face.z)
             continue;
 
-        bool faceExists = false;
-        for (glm::vec3 existingFace : faces)
-        {
-            // those will be integer indices, so we are safe at epsilon = 0.001
-            if ((face - existingFace).length() < 0.001f || ((glm::vec3(face.z, face.x, face.y)-existingFace).length() < 0.001f) || ((glm::vec3(face.y, face.z, face.x)-existingFace).length() < 0.001f))
-                faceExists = true;
-        }
+        // bool faceExists = false;
+        // for (glm::vec3 existingFace : faces)
+        // {
+        //     // those will be integer indices, so we are safe at epsilon = 0.001
+        //     if ((face - existingFace).length() < 0.001f || ((glm::vec3(face.z, face.x, face.y)-existingFace).length() < 0.001f) || ((glm::vec3(face.y, face.z, face.x)-existingFace).length() < 0.001f))
+        //         faceExists = true;
+        // }
 
-        if (faceExists)
-            continue;
+        // if (faceExists)
+        //     continue;
 
-        LOD->addTriangle(face.x, face.y, face.z);
-        faces.push_back(face);
+        LOD->addTriangle((int)face.x, (int)face.y, (int)face.z);
+        //faces.push_back(face);
     }
 
     delete octree;
-
-    
-    for (glm::vec3 face : faces)
-    {
-        LOD->addTriangle((int)face.x, (int)face.y, (int)face.z);
-    }
 
     LOD->initializeMesh();
 
@@ -209,7 +204,7 @@ TriangleMesh *TriangleMesh::Get(string filename)
     {
         mesh->initializeMesh();
         meshes[filename] = mesh;
-        Octree *octree = new Octree(6, mesh->minAABB - glm::vec3(0.001f), mesh->maxAABB + glm::vec3(0.001f));
+        Octree *octree = new Octree(7, mesh->minAABB - glm::vec3(0.5f), (max(mesh->getExtents().x,max(mesh->getExtents().y,mesh->getExtents().z)) + 1.f)/2.0f);
         meshes[filename] = mesh->computeLODs(octree);
     }
 
