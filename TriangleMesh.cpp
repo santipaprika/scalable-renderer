@@ -24,7 +24,7 @@ void TriangleMesh::addTriangle(int v0, int v1, int v2)
     triangles.push_back(v2);
 }
 
-void TriangleMesh::initializeMesh() 
+void TriangleMesh::initializeMesh()
 {
     computeAABB();
     sendToOpenGL(Application::instance().scene.basicProgram);
@@ -129,61 +129,57 @@ glm::vec3 TriangleMesh::getExtents() const
     return maxAABB - minAABB;
 }
 
-TriangleMesh* TriangleMesh::computeLODs(Octree *octree)
+TriangleMesh *TriangleMesh::computeLODs(Octree *octree)
 {
     Octree *vertexOctree[vertices.size()] = {};
 
-    for (int i=0; i<vertices.size(); i++)
+    // fill and subdivide octree
+    for (int i = 0; i < vertices.size(); i++)
     {
         vertexOctree[i] = octree->evaluateVertex(vertices[i]);
     }
+
+    // update each node's representative    
     octree->computeMeanPositions();
 
     // this will store the index of the new vertices created from the ones inside each octree
     std::unordered_map<int, int> octreeIdxDict;
 
-    TriangleMesh* LOD = new TriangleMesh();
+    // new mesh here
+    TriangleMesh *LOD = new TriangleMesh();
 
     int count = 0;
-    for (int i=0; i <vertices.size(); i++)
+    for (int i = 0; i < vertices.size(); i++)
     {
-        // Octree idx is not present
+        // add vertex coordinate
         if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end())
         {
-            // add vertex coordinate
             LOD->addVertex(vertexOctree[i]->getAvgPosition());
 
-            // store the index of the new vertex inserted above
+            // update dict
             octreeIdxDict[vertexOctree[i]->getIndex()] = count;
             count++;
         }
     }
 
-    std::cout << count << std::endl;
+    std::unordered_map<glm::vec3, bool> facesDict;
 
-    std::vector<glm::vec3> faces;
-    for (int i = 0; i < LOD->vertices.size(); i += 3)
+    for (int i = 0; i < triangles.size(); i += 3)
     {
-        glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[i]->getIndex()], octreeIdxDict[vertexOctree[i+1]->getIndex()], octreeIdxDict[vertexOctree[i+2]->getIndex()]);
+        glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[triangles[i]]->getIndex()], octreeIdxDict[vertexOctree[triangles[i + 1]]->getIndex()], octreeIdxDict[vertexOctree[triangles[i + 2]]->getIndex()]);
 
         // Face vertices
         if (face.x == face.y || face.x == face.z || face.y == face.z)
             continue;
 
-        // bool faceExists = false;
-        // for (glm::vec3 existingFace : faces)
-        // {
-        //     // those will be integer indices, so we are safe at epsilon = 0.001
-        //     if ((face - existingFace).length() < 0.001f || ((glm::vec3(face.z, face.x, face.y)-existingFace).length() < 0.001f) || ((glm::vec3(face.y, face.z, face.x)-existingFace).length() < 0.001f))
-        //         faceExists = true;
-        // }
-
-        // if (faceExists)
+        // if (facesDict.find(face) != facesDict.end() || facesDict.find(glm::vec3(face.z, face.x, face.y)) != facesDict.end() || facesDict.find(glm::vec3(face.y, face.z, face.x)) != facesDict.end())
         //     continue;
 
         LOD->addTriangle((int)face.x, (int)face.y, (int)face.z);
-        //faces.push_back(face);
+        // facesDict[face] = true;
     }
+    cout << "FACES: " << LOD->triangles.size() << endl;
+    cout << "VERTS: " << LOD->vertices.size() << endl;
 
     delete octree;
 
@@ -204,7 +200,13 @@ TriangleMesh *TriangleMesh::Get(string filename)
     {
         mesh->initializeMesh();
         meshes[filename] = mesh;
-        Octree *octree = new Octree(7, mesh->minAABB - glm::vec3(0.5f), (max(mesh->getExtents().x,max(mesh->getExtents().y,mesh->getExtents().z)) + 1.f)/2.0f);
+
+        // create octree
+        glm::vec3 center = mesh->minAABB + mesh->getExtents() / 2.0f;
+        float maxExtent = max(mesh->getExtents().x, max(mesh->getExtents().y, mesh->getExtents().z));
+        glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
+        Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
+
         meshes[filename] = mesh->computeLODs(octree);
     }
 

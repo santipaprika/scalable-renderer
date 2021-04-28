@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
+#include "glm/gtx/hash.hpp"
 #include <unordered_map>
 #include "ShaderProgram.h"
 #include "Octree.h"
@@ -39,9 +40,9 @@ public:
 
     static TriangleMesh *Get(string path);
 
-private:
-    vector<glm::vec3> vertices;
     vector<int> triangles;
+    vector<glm::vec3> vertices;
+private:
 
     GLuint vao;
     GLuint vbo;
