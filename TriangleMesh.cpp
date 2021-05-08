@@ -222,7 +222,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
         Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
 
-        meshes[filename] = mesh->computeLODs(octree, false);
+        meshes[filename] = mesh->computeLODs(octree, true);
     }
 
     return mesh;

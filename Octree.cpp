@@ -84,4 +84,6 @@ void Octree::computeQEMPositions() {
         if (childs[i])
             childs[i]->computeQEMPositions();
     }
+
+    position = Plane::computePointMinimizingQEM(quadrics);
 }
