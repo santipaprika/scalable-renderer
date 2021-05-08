@@ -116,7 +116,7 @@ glm::vec3 TriangleMesh::getExtents() const {
     return maxAABB - minAABB;
 }
 
-TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
+TriangleMesh *TriangleMesh::computeLODs(Octree *octree, bool useQEM) {
     
     // contains the quadrics associated to each vertex index
     unordered_map<int, unordered_set<Plane *>> vertexToQuadric = associateVerticesToQuadrics();
@@ -125,11 +125,14 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
 
     // fill and subdivide octree
     for (int i = 0; i < vertices.size(); i++) {
-        vertexOctree[i] = octree->evaluateVertex(vertices[i]);
+        vertexOctree[i] = octree->evaluateVertex(vertices[i], vertexToQuadric, i);
     }
 
     // update each node's representative
-    octree->computeMeanPositions();
+    if (useQEM)
+        octree->computeQEMPositions();
+    else
+        octree->computeMeanPositions();
 
     // this will store the index of the new vertices created from the ones inside each octree
     std::unordered_map<int, int> octreeIdxDict;
@@ -141,7 +144,7 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     for (int i = 0; i < vertices.size(); i++) {
         // add vertex coordinate
         if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
-            LOD->addVertex(vertexOctree[i]->getAvgPosition());
+            LOD->addVertex(vertexOctree[i]->getPosition());
 
             // update dict
             octreeIdxDict[vertexOctree[i]->getIndex()] = count;
@@ -219,7 +222,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
         Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
 
-        meshes[filename] = mesh->computeLODs(octree);
+        meshes[filename] = mesh->computeLODs(octree, false);
     }
 
     return mesh;

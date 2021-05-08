@@ -37,7 +37,7 @@ class TriangleMesh {
     void computeAABB();
     glm::vec3 getExtents() const;
 
-    TriangleMesh *computeLODs(Octree *octree);
+    TriangleMesh *computeLODs(Octree *octree, bool useQEM=true);
     vector<Plane *> generateQuadrics();
     unordered_map<int, unordered_set<Plane *>> associateVerticesToQuadrics();
 
