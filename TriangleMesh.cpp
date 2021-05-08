@@ -1,37 +1,32 @@
-#include <iostream>
-#include <vector>
-#include <set>
 #include "TriangleMesh.h"
+
+#include <iostream>
+
+#include "Application.h"
 #include "PLYReader.h"
 #include "Scene.h"
-#include "Application.h"
 
 using namespace std;
 
-TriangleMesh::TriangleMesh()
-{
+TriangleMesh::TriangleMesh() {
 }
 
-void TriangleMesh::addVertex(const glm::vec3 &position)
-{
+void TriangleMesh::addVertex(const glm::vec3 &position) {
     vertices.push_back(position);
 }
 
-void TriangleMesh::addTriangle(int v0, int v1, int v2)
-{
+void TriangleMesh::addTriangle(int v0, int v1, int v2) {
     triangles.push_back(v0);
     triangles.push_back(v1);
     triangles.push_back(v2);
 }
 
-void TriangleMesh::initializeMesh()
-{
+void TriangleMesh::initializeMesh() {
     computeAABB();
     sendToOpenGL(Application::instance().scene.basicProgram);
 }
 
-void TriangleMesh::buildCube()
-{
+void TriangleMesh::buildCube() {
     float vertices[] = {-1, -1, -1,
                         1, -1, -1,
                         1, 1, -1,
@@ -58,19 +53,16 @@ void TriangleMesh::buildCube()
     computeAABB();
 }
 
-void TriangleMesh::sendToOpenGL(ShaderProgram &program)
-{
+void TriangleMesh::sendToOpenGL(ShaderProgram &program) {
     vector<float> data;
 
-    for (unsigned int tri = 0; tri < triangles.size(); tri += 3)
-    {
+    for (unsigned int tri = 0; tri < triangles.size(); tri += 3) {
         glm::vec3 normal;
 
         normal = glm::cross(vertices[triangles[tri + 1]] - vertices[triangles[tri]],
                             vertices[triangles[tri + 2]] - vertices[triangles[tri]]);
         normal = glm::normalize(normal);
-        for (unsigned int vrtx = 0; vrtx < 3; vrtx++)
-        {
+        for (unsigned int vrtx = 0; vrtx < 3; vrtx++) {
             data.push_back(vertices[triangles[tri + vrtx]].x);
             data.push_back(vertices[triangles[tri + vrtx]].y);
             data.push_back(vertices[triangles[tri + vrtx]].z);
@@ -91,16 +83,14 @@ void TriangleMesh::sendToOpenGL(ShaderProgram &program)
     normalLocation = program.bindVertexAttribute("normal", 3, 6 * sizeof(float), (void *)(3 * sizeof(float)));
 }
 
-void TriangleMesh::render() const
-{
+void TriangleMesh::render() const {
     glBindVertexArray(vao);
     glEnableVertexAttribArray(posLocation);
     glEnableVertexAttribArray(normalLocation);
     glDrawArrays((Application::instance().bDrawPoints) ? GL_POINTS : GL_TRIANGLES, 0, 3 * 2 * 3 * triangles.size() / 3);
 }
 
-void TriangleMesh::free()
-{
+void TriangleMesh::free() {
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
 
@@ -108,12 +98,10 @@ void TriangleMesh::free()
     triangles.clear();
 }
 
-void TriangleMesh::computeAABB()
-{
+void TriangleMesh::computeAABB() {
     minAABB = glm::vec3(INFINITY);
     maxAABB = glm::vec3(-INFINITY);
-    for (int i = 0; i < vertices.size(); i++)
-    {
+    for (int i = 0; i < vertices.size(); i++) {
         minAABB.x = min(minAABB.x, vertices[i].x);
         minAABB.y = min(minAABB.y, vertices[i].y);
         minAABB.z = min(minAABB.z, vertices[i].z);
@@ -124,22 +112,23 @@ void TriangleMesh::computeAABB()
     }
 }
 
-glm::vec3 TriangleMesh::getExtents() const
-{
+glm::vec3 TriangleMesh::getExtents() const {
     return maxAABB - minAABB;
 }
 
-TriangleMesh *TriangleMesh::computeLODs(Octree *octree)
-{
+TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
+    
+    // contains the quadrics associated to each vertex index
+    unordered_map<int, unordered_set<Plane *>> vertexToQuadric = associateVerticesToQuadrics();
+
     Octree *vertexOctree[vertices.size()] = {};
 
     // fill and subdivide octree
-    for (int i = 0; i < vertices.size(); i++)
-    {
+    for (int i = 0; i < vertices.size(); i++) {
         vertexOctree[i] = octree->evaluateVertex(vertices[i]);
     }
 
-    // update each node's representative    
+    // update each node's representative
     octree->computeMeanPositions();
 
     // this will store the index of the new vertices created from the ones inside each octree
@@ -149,11 +138,9 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree)
     TriangleMesh *LOD = new TriangleMesh();
 
     int count = 0;
-    for (int i = 0; i < vertices.size(); i++)
-    {
+    for (int i = 0; i < vertices.size(); i++) {
         // add vertex coordinate
-        if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end())
-        {
+        if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
             LOD->addVertex(vertexOctree[i]->getAvgPosition());
 
             // update dict
@@ -164,8 +151,7 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree)
 
     std::unordered_map<glm::vec3, bool> facesDict;
 
-    for (int i = 0; i < triangles.size(); i += 3)
-    {
+    for (int i = 0; i < triangles.size(); i += 3) {
         glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[triangles[i]]->getIndex()], octreeIdxDict[vertexOctree[triangles[i + 1]]->getIndex()], octreeIdxDict[vertexOctree[triangles[i + 2]]->getIndex()]);
 
         // Face vertices
@@ -188,16 +174,42 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree)
     return LOD;
 }
 
+vector<Plane *> TriangleMesh::generateQuadrics() {
+    vector<Plane *> facePlane;
+
+    for (int i = 0; i < triangles.size(); i += 3) {
+        facePlane.push_back(new Plane(vertices[triangles[i]], vertices[triangles[i + 1]], vertices[triangles[i + 2]]));
+    }
+
+    return facePlane;
+}
+
+unordered_map<int, unordered_set<Plane *>> TriangleMesh::associateVerticesToQuadrics() {
+    
+    // contains the plane containing each face
+    vector<Plane *> faceQuadrics = generateQuadrics();
+
+    unordered_map<int, unordered_set<Plane *>> vertexQuadrics;
+
+    for (int i = 0; i < triangles.size(); i++) {
+        if (vertexQuadrics.find(triangles[i]) == vertexQuadrics.end()) {
+            vertexQuadrics.insert({triangles[i], unordered_set<Plane *>{faceQuadrics[i / 3]}});
+        } else {
+            vertexQuadrics[triangles[i]].insert(faceQuadrics[i / 3]);
+        }
+    }
+
+    return vertexQuadrics;
+}
+
 unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
-TriangleMesh *TriangleMesh::Get(string filename)
-{
+TriangleMesh *TriangleMesh::Get(string filename) {
     if (meshes.find(filename) != meshes.end())
         return meshes.at(filename);
 
     TriangleMesh *mesh = new TriangleMesh();
     bool bSuccess = PLYReader::readMesh(filename, (*mesh));
-    if (bSuccess)
-    {
+    if (bSuccess) {
         mesh->initializeMesh();
         meshes[filename] = mesh;
 

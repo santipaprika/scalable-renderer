@@ -1,15 +1,18 @@
 #ifndef _TRIANGLE_MESH_INCLUDE
 #define _TRIANGLE_MESH_INCLUDE
 
+#include <glm/glm.hpp>
 #include <string>
 #include <vector>
-#include <glm/glm.hpp>
+#include <unordered_set>
+#include <unordered_map>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
-#include "glm/gtx/hash.hpp"
-#include <unordered_map>
-#include "ShaderProgram.h"
+
 #include "Octree.h"
+#include "Plane.h"
+#include "ShaderProgram.h"
+#include "glm/gtx/hash.hpp"
 
 #define OUT
 
@@ -17,10 +20,8 @@ using namespace std;
 
 // Class TriangleMesh renders a very simple room with textures
 
-class TriangleMesh
-{
-
-public:
+class TriangleMesh {
+   public:
     TriangleMesh();
 
     void addVertex(const glm::vec3 &position);
@@ -36,14 +37,16 @@ public:
     void computeAABB();
     glm::vec3 getExtents() const;
 
-    TriangleMesh* computeLODs(Octree *octree);
+    TriangleMesh *computeLODs(Octree *octree);
+    vector<Plane *> generateQuadrics();
+    unordered_map<int, unordered_set<Plane *>> associateVerticesToQuadrics();
 
     static TriangleMesh *Get(string path);
 
     vector<int> triangles;
     vector<glm::vec3> vertices;
-private:
 
+   private:
     GLuint vao;
     GLuint vbo;
     GLint posLocation, normalLocation;
@@ -54,4 +57,4 @@ private:
     static unordered_map<string, TriangleMesh *> meshes;
 };
 
-#endif // _TRIANGLE_MESH_INCLUDE
+#endif  // _TRIANGLE_MESH_INCLUDE
