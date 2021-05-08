@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required (VERSION 3.0)
 
 cmake_policy(SET CMP0015 NEW)
 cmake_policy(SET CMP0072 OLD)
@@ -20,6 +20,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
 include_directories(${OPENGL_INCLUDE_DIRS})
 include_directories(${GLUT_INCLUDE_DIRS})
@@ -41,7 +42,7 @@ Camera.h Camera.cpp Node.h Node.cpp Scene.h Scene.cpp Shader.h Shader.cpp Shader
 #ImGUI/imgui_demo.cpp ImGUI/imgui_draw.cpp ImGUI/imgui_demo.cpp ImGUI/imgui_impl_glut.cpp ImGUI/imgui_impl_opengl3.cpp ImGUI/imgui_tables.cpp
  #               ImGUI/imgui_widgets.cpp ImGUI/imgui.cpp)
 
-target_link_libraries(${appName} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLEW_LIBRARIES})
+target_link_libraries(${appName} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLEW_LIBRARIES} Eigen3::Eigen)
 
 
 
