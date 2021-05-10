@@ -119,7 +119,10 @@ glm::vec3 TriangleMesh::getExtents() const {
 TriangleMesh *TriangleMesh::computeLODs(Octree *octree, bool useQEM) {
     
     // contains the quadrics associated to each vertex index
-    unordered_map<int, unordered_set<Plane *>> vertexToQuadric = associateVerticesToQuadrics();
+    unordered_map<int, unordered_set<Plane *>> vertexToQuadric;
+
+    if (useQEM)
+        vertexToQuadric = associateVerticesToQuadrics();
 
     Octree *vertexOctree[vertices.size()] = {};
 
@@ -222,7 +225,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
         Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
 
-        meshes[filename] = mesh->computeLODs(octree, true);
+        meshes[filename] = mesh->computeLODs(octree, false);
     }
 
     return mesh;

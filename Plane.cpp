@@ -10,7 +10,8 @@ Plane::Plane(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
     glm::highp_vec3 v1 = glm::normalize(p2 - p1);
     glm::highp_vec3 v2 = glm::normalize(p3 - p1);
 
-    glm::highp_vec3 n = glm::normalize(glm::cross(v1, v2));
+    // Left hand
+    glm::highp_vec3 n = glm::normalize(glm::cross(v2, v1));
 
     a = n.x;
     b = n.y;
