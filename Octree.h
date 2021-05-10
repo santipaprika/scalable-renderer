@@ -1,12 +1,15 @@
 #ifndef __OCTREE_H__
 #define __OCTREE_H__
 
-#include <unordered_set>
+#include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include "glm/glm.hpp"
 #include "Plane.h"
 
 using namespace std;
+
+enum ClusterMode { AVG, QEM, QEM_N };
 
 class Octree
 {
@@ -19,7 +22,12 @@ private:
     int maxDepth;
     int nVertices;
     int idx;
-    unordered_set<Plane*> quadrics;
+
+    // QEM
+    vector<Plane*> quadrics;
+
+    // QEM_N
+    vector<Plane*> clusteredQuadrics[8];
 
     static int counter;
 
@@ -29,11 +37,15 @@ public:
     ~Octree();
 
     glm::vec3 getPosition() const;
-    Octree* evaluateVertex(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, int idx=0);
+    Octree* evaluateVertex(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, unordered_map<int, vector<int>> vertexToNormalCluster,
+                            int idx=0, int clusterMode=AVG);
     int getIndex() const;
     void computeMeanPositions();
     void computeQEMPositions();
+    void computeQEM_N_Positions();
+    void computeRepresentatives(int clusterMode=AVG);
 
+    glm::vec3 representatives[8];
     Octree *childs[8];
     Octree *parent;
 };

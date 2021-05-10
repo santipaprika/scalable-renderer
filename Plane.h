@@ -2,7 +2,7 @@
 #define __PLANE_H__
 
 #include <glm/glm.hpp>
-#include <unordered_set>
+#include <vector>
 
 class Plane
 {
@@ -12,7 +12,9 @@ public:
     Plane(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3);
     ~Plane();
 
-    static glm::vec3 computePointMinimizingQEM(std::unordered_set<Plane*> planes);
+    glm::vec3 getNormal(); 
+
+    static glm::vec3 computePointMinimizingQEM(std::vector<Plane*> planes);
 };
 
 #endif // __PLANE_H__
