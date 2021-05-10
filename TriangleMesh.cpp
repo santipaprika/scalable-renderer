@@ -170,8 +170,8 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree, bool useQEM) {
         LOD->addTriangle((int)face.x, (int)face.y, (int)face.z);
         // facesDict[face] = true;
     }
-    cout << "FACES: " << LOD->triangles.size() << endl;
-    cout << "VERTS: " << LOD->vertices.size() << endl;
+    cout << "Simplified model faces: " << LOD->triangles.size() << endl;
+    cout << "Simplified model vertices: " << LOD->vertices.size() << endl;
 
     delete octree;
 

@@ -86,6 +86,7 @@ void Application::render() {
     static int item_current = 0;
     if (ImGui::Combo("", &item_current, items, IM_ARRAYSIZE(items))) {
         TriangleMesh::clearMeshes();
+        cout << "\n\n\n---- Switching to vertex cluster strategy: " << items[item_current] << " ---- \n" << endl;
         scene.setupMuseumScene(item_current, false);
     }
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
