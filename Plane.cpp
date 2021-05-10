@@ -22,7 +22,12 @@ Plane::Plane(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
 Plane::~Plane() {
 }
 
-glm::vec3 Plane::computePointMinimizingQEM(std::unordered_set<Plane *> planes) {
+glm::vec3 Plane::getNormal() 
+{
+    return glm::vec3(a,b,c);
+}
+
+glm::vec3 Plane::computePointMinimizingQEM(std::vector<Plane *> planes) {
     Matrix4d Q = Matrix4d::Zero();
     for (Plane *plane : planes) {
         Vector4d q = Vector4d(plane->a,plane->b,plane->c,plane->d);

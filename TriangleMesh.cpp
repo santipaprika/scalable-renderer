@@ -116,42 +116,63 @@ glm::vec3 TriangleMesh::getExtents() const {
     return maxAABB - minAABB;
 }
 
-TriangleMesh *TriangleMesh::computeLODs(Octree *octree, bool useQEM) {
-    
+TriangleMesh *TriangleMesh::computeLODs(Octree *octree, int clusterMode) {
     // contains the quadrics associated to each vertex index
     unordered_map<int, unordered_set<Plane *>> vertexToQuadric;
+    unordered_map<int, vector<int>> vertexToNormalCluster;
 
-    if (useQEM)
+    if (clusterMode == QEM || clusterMode == QEM_N) {
         vertexToQuadric = associateVerticesToQuadrics();
+        if (clusterMode == QEM_N)
+            vertexToNormalCluster = associateVerticesToNormalClusters(vertexToQuadric);
+    }
 
     Octree *vertexOctree[vertices.size()] = {};
 
     // fill and subdivide octree
     for (int i = 0; i < vertices.size(); i++) {
-        vertexOctree[i] = octree->evaluateVertex(vertices[i], vertexToQuadric, i);
+        vertexOctree[i] = octree->evaluateVertex(vertices[i], vertexToQuadric, vertexToNormalCluster, i, clusterMode);
     }
 
     // update each node's representative
-    if (useQEM)
-        octree->computeQEMPositions();
-    else
-        octree->computeMeanPositions();
+    octree->computeRepresentatives(clusterMode);
 
     // this will store the index of the new vertices created from the ones inside each octree
-    std::unordered_map<int, int> octreeIdxDict;
+    unordered_map<int, int> octreeIdxDict;
+
+    // in case of using normal clustering strategy
+    unordered_map<int, vector<int>> octreeIdxClusterDict;
 
     // new mesh here
     TriangleMesh *LOD = new TriangleMesh();
 
     int count = 0;
-    for (int i = 0; i < vertices.size(); i++) {
-        // add vertex coordinate
-        if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
-            LOD->addVertex(vertexOctree[i]->getPosition());
 
-            // update dict
-            octreeIdxDict[vertexOctree[i]->getIndex()] = count;
-            count++;
+    if (clusterMode == QEM_N) {
+        for (int i = 0; i < vertices.size(); i++) {
+            // add vertex coordinate
+            if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
+                LOD->addVertex(vertexOctree[i]->getPosition());
+
+                for (int j : vertexToNormalCluster[i]) {
+                    LOD->addVertex(vertexOctree[i]->representatives[j]);
+
+                    // update dict
+                    octreeIdxDict[vertexOctree[i]->getIndex() * 8 + j] = count;
+                    count++;
+                }
+            }
+        }
+    } else {
+        for (int i = 0; i < vertices.size(); i++) {
+            // add vertex coordinate
+            if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
+                LOD->addVertex(vertexOctree[i]->getPosition());
+
+                // update dict
+                octreeIdxDict[vertexOctree[i]->getIndex()] = count;
+                count++;
+            }
         }
     }
 
@@ -191,7 +212,6 @@ vector<Plane *> TriangleMesh::generateQuadrics() {
 }
 
 unordered_map<int, unordered_set<Plane *>> TriangleMesh::associateVerticesToQuadrics() {
-    
     // contains the plane containing each face
     vector<Plane *> faceQuadrics = generateQuadrics();
 
@@ -208,10 +228,23 @@ unordered_map<int, unordered_set<Plane *>> TriangleMesh::associateVerticesToQuad
     return vertexQuadrics;
 }
 
+unordered_map<int, vector<int>> TriangleMesh::associateVerticesToNormalClusters(unordered_map<int, unordered_set<Plane *>> vertexToQuadric) {
+    unordered_map<int, std::vector<int>> vertexToNormalCluster;
+
+    for (int i = 0; i < vertices.size(); i++) {
+        for (Plane *plane : vertexToQuadric[i]) {
+            glm::vec3 n = plane->getNormal();
+            vertexToNormalCluster[i].push_back((n.x > 0) * 4 + (n.y > 0) * 2 + (n.z > 0));
+        }
+    }
+
+    return vertexToNormalCluster;
+}
+
 unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
 
 // get mesh or create (and return) it if path has not been loaded before
-TriangleMesh *TriangleMesh::Get(string filename, bool useQEM) {
+TriangleMesh *TriangleMesh::Get(string filename, int clusterMode) {
     if (meshes.find(filename) != meshes.end())
         return meshes.at(filename);
 
@@ -227,13 +260,12 @@ TriangleMesh *TriangleMesh::Get(string filename, bool useQEM) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
         Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
 
-        meshes[filename] = mesh->computeLODs(octree, useQEM);
+        meshes[filename] = mesh->computeLODs(octree, clusterMode);
     }
 
     return mesh;
 }
 
-void TriangleMesh::clearMeshes() 
-{
+void TriangleMesh::clearMeshes() {
     meshes.clear();
 }
