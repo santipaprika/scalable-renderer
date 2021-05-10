@@ -22,7 +22,7 @@ Plane::~Plane() {
 }
 
 glm::vec3 Plane::computePointMinimizingQEM(std::unordered_set<Plane *> planes) {
-    Matrix4d Q;
+    Matrix4d Q = Matrix4d::Zero();
     for (Plane *plane : planes) {
         Vector4d q = Vector4d(plane->a,plane->b,plane->c,plane->d);
         Q += q*q.transpose();
