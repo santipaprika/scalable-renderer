@@ -41,7 +41,9 @@ class TriangleMesh {
     vector<Plane *> generateQuadrics();
     unordered_map<int, unordered_set<Plane *>> associateVerticesToQuadrics();
 
-    static TriangleMesh *Get(string path);
+    // get mesh or create (and return) it if path has not been loaded before
+    static TriangleMesh *Get(string path, bool useQEM=false);
+    static void clearMeshes();
 
     vector<int> triangles;
     vector<glm::vec3> vertices;

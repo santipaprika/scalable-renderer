@@ -209,7 +209,9 @@ unordered_map<int, unordered_set<Plane *>> TriangleMesh::associateVerticesToQuad
 }
 
 unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
-TriangleMesh *TriangleMesh::Get(string filename) {
+
+// get mesh or create (and return) it if path has not been loaded before
+TriangleMesh *TriangleMesh::Get(string filename, bool useQEM) {
     if (meshes.find(filename) != meshes.end())
         return meshes.at(filename);
 
@@ -225,8 +227,13 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
         Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
 
-        meshes[filename] = mesh->computeLODs(octree, false);
+        meshes[filename] = mesh->computeLODs(octree, useQEM);
     }
 
     return mesh;
+}
+
+void TriangleMesh::clearMeshes() 
+{
+    meshes.clear();
 }

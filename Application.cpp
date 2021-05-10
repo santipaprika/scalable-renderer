@@ -1,20 +1,35 @@
+#include "Application.h"
+
 #include <GL/glew.h>
 #include <GL/glut.h>
-#include <iostream>
+
 #include <iomanip>
-#include "Application.h"
+#include <iostream>
+
 #include "ImGUI/imgui.h"
 
-void Application::init()
+// ImGui helper
+static void HelpMarker(const char* desc)
 {
+    ImGui::TextDisabled("(!)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+void Application::init() {
     bPlay = true;
     glClearColor(1.f, 1.f, 1.f, 1.0f);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     scene.init();
 
-    for (unsigned int i = 0; i < 256; i++)
-    {
+    for (unsigned int i = 0; i < 256; i++) {
         keys[i] = false;
         specialKeys[i] = false;
     }
@@ -30,16 +45,14 @@ void Application::init()
     bDrawPoints = false;
 }
 
-bool Application::update(int deltaTime)
-{
-    this->deltaTime = deltaTime/1000.;
+bool Application::update(int deltaTime) {
+    this->deltaTime = deltaTime / 1000.;
     scene.update(this->deltaTime);
 
     frameCount++;
     timeCounter += deltaTime;
 
-    if (timeCounter >= 1000)
-    {
+    if (timeCounter >= 1000) {
         this->framerate = (frameCount * 1000) / float(timeCounter);
         frameCount = 0;
         timeCounter = 0;
@@ -48,29 +61,47 @@ bool Application::update(int deltaTime)
     return bPlay;
 }
 
-void Application::render()
-{
+void Application::render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     scene.render();
 
-    ImGui::Begin("Framerate");
+    ImGui::Begin("Debug options");
     ImGui::Text("ImGui FR: %.1f FPS", ImGui::GetIO().Framerate);
     ImGui::Text("Computed FR: %.1f FPS", framerate);
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator(); // ------------
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
     ImGui::Checkbox("Render points", &bDrawPoints);
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator(); // ------------
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    ImGui::Text("Vertex clustering strategy:");
+    ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it");
+        
+    const char* items[] = {"[AVG] Octree average", "[QEM] Quadric Error Metrics"};
+    static int item_current = 0;
+    if (ImGui::Combo("", &item_current, items, IM_ARRAYSIZE(items))) {
+        TriangleMesh::clearMeshes();
+        scene.setupMuseumScene(item_current, false);
+    }
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
     ImGui::End();
 }
 
-void Application::resize(int width, int height)
-{
+void Application::resize(int width, int height) {
     glViewport(0, 0, width, height);
     scene.getCamera().resizeCameraViewport(width, height);
     this->width = width;
     this->height = height;
 }
 
-void Application::keyPressed(int key)
-{
-    if (key == 27) // Escape code
+void Application::keyPressed(int key) {
+    if (key == 27)  // Escape code
         bPlay = false;
     keys[key] = true;
 
@@ -78,25 +109,21 @@ void Application::keyPressed(int key)
         scene.setNumInstances(key - 48);
 }
 
-void Application::keyReleased(int key)
-{
+void Application::keyReleased(int key) {
     keys[key] = false;
 }
 
-void Application::specialKeyPressed(int key)
-{
+void Application::specialKeyPressed(int key) {
     specialKeys[key] = true;
 }
 
-void Application::specialKeyReleased(int key)
-{
+void Application::specialKeyReleased(int key) {
     specialKeys[key] = false;
     if (key == GLUT_KEY_F1)
         scene.switchPolygonMode();
 }
 
-void Application::mouseMove(int x, int y)
-{
+void Application::mouseMove(int x, int y) {
     // Zoom
     // if (mouseButtons[1] && lastMousePos.x != -1)
     //     glutSetCursor(GLUT_CURSOR_CROSSHAIR);
@@ -104,46 +131,39 @@ void Application::mouseMove(int x, int y)
     lastMousePos = glm::ivec2(x, y);
 }
 
-void Application::mousePassiveMove(int x, int y)
-{
+void Application::mousePassiveMove(int x, int y) {
     if (!cursorInGameMode) return;
 
     glm::vec2 center((float)width / 2, (float)height / 2);
-    glm::vec2 cameraAngle(-(y-center.y),-(x-center.x)); 
+    glm::vec2 cameraAngle(-(y - center.y), -(x - center.x));
 
-    if(cameraAngle.x != 0.0f || cameraAngle.y != 0.0f) {
+    if (cameraAngle.x != 0.0f || cameraAngle.y != 0.0f) {
         scene.getCamera().rotateCamera(0.5f * deltaTime * cameraAngle.x, 0.5f * deltaTime * cameraAngle.y);
         glutPostRedisplay();
 
-        if (x != center.x || y != center.y) 
-                glutWarpPointer(center.x, center.y);
+        if (x != center.x || y != center.y)
+            glutWarpPointer(center.x, center.y);
     }
 }
 
-void Application::mousePress(int button)
-{
+void Application::mousePress(int button) {
     mouseButtons[button] = true;
-
 }
 
-void Application::mouseRelease(int button)
-{
+void Application::mouseRelease(int button) {
     mouseButtons[button] = false;
-    if (button == mouseButtons[0])
-    {
-        lastMousePos = glm::ivec2(width/2.0f, height/2.0f);
+    if (button == mouseButtons[0]) {
+        lastMousePos = glm::ivec2(width / 2.0f, height / 2.0f);
         cursorInGameMode = !cursorInGameMode;
-    
-        cursorInGameMode ? glutSetCursor( GLUT_CURSOR_NONE ) : glutSetCursor( GLUT_CURSOR_INHERIT );
+
+        cursorInGameMode ? glutSetCursor(GLUT_CURSOR_NONE) : glutSetCursor(GLUT_CURSOR_INHERIT);
     }
 }
 
-bool Application::getKey(int key) const
-{
+bool Application::getKey(int key) const {
     return keys[key];
 }
 
-bool Application::getSpecialKey(int key) const
-{
+bool Application::getSpecialKey(int key) const {
     return specialKeys[key];
 }

@@ -59,7 +59,7 @@ void Scene::setupGridScene()
     }
 }
 
-void Scene::setupMuseumScene()
+void Scene::setupMuseumScene(bool useQEM, bool initCamera)
 {
     clearNodes();
 
@@ -95,7 +95,7 @@ void Scene::setupMuseumScene()
             addNode(cube, glm::vec3(j, -gridStep / 2.0f, i), glm::vec3(1, 0.01, 1));
 
             // camera origin
-            if (grid[y][x] == Tile::ORIGIN)
+            if (initCamera && grid[y][x] == Tile::ORIGIN)
                 camera.init(glm::vec3(j, 1, i), 0, 0);
 
             // check for walls
@@ -116,7 +116,7 @@ void Scene::setupMuseumScene()
                 if (grid[y][x] == Tile::CUBE)
                     mesh = cube;
                 else
-                    mesh = TriangleMesh::Get("../models/" + modelsPath[grid[y][x] - (Tile::CUBE + 1)]);
+                    mesh = TriangleMesh::Get("../models/" + modelsPath[grid[y][x] - (Tile::CUBE + 1)], useQEM);
 
                 addNode(mesh, glm::vec3(j, 0, i));
             }

@@ -11,7 +11,7 @@ Plane::Plane(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
     glm::highp_vec3 v2 = glm::normalize(p3 - p1);
 
     // Left hand
-    glm::highp_vec3 n = glm::normalize(glm::cross(v2, v1));
+    glm::highp_vec3 n = glm::normalize(glm::cross(v1, v2));
 
     a = n.x;
     b = n.y;
@@ -37,7 +37,7 @@ glm::vec3 Plane::computePointMinimizingQEM(std::unordered_set<Plane *> planes) {
     JacobiSVD<Matrix4d> svd(Q, ComputeFullU | ComputeFullV);
     Vector4d rhs(0,0,0,1);
 
-    Vector4d sol = svd.solve(rhs);
+    Vector4d sol = -svd.solve(rhs);
 
     return glm::vec3(sol[0], sol[1], sol[2]);
 }
