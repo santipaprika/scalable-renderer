@@ -24,9 +24,9 @@ void Camera::init(glm::vec3 position, float initAngleX, float initAngleY)
     rangeDistanceCamera[0] = 1.0f;
     rangeDistanceCamera[1] = 3.0f;
     this->position = position;
-    velocity = 6;
+    velocity = 2;
     sprintVelocity = 20;
-    rotationSpeed = 5;
+    rotationSpeed = 2;
 
     computeModelViewMatrix();
 }
