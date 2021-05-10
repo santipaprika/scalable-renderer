@@ -58,7 +58,6 @@ static void specialUpCallback(int key, int x, int y)
 static void motionCallback(int x, int y)
 {
     ImGui_ImplGLUT_MotionFunc(x, y);
-    if (ImGui::GetIO().WantCaptureMouse) return;
 
     Application::instance().mouseMove(x, y);
 }
