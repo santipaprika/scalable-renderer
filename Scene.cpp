@@ -64,7 +64,7 @@ void Scene::setupMuseumScene(bool useQEM, bool initCamera)
     clearNodes();
 
     std::ifstream tilemap("../tilemap.tmx");
-    string modelsPath[11] = {"bunny.ply", "dragon.ply", "frog.ply", "happy.ply", "horse.ply", "lucy.ply", "maxplanck.ply", "moai.ply", "sphere.ply", "tetrahedron.ply", "torus.ply"};
+    string modelsPath[12] = {"bunny.ply", "dragon.ply", "frog.ply", "happy.ply", "horse.ply", "lucy.ply", "maxplanck.ply", "moai.ply", "sphere.ply", "tetrahedron.ply", "torus.ply", "Armadillo.ply"};
     glm::vec2 surroundingDirs[4] = {glm::vec2(-1, 0), glm::vec2(0, -1), glm::vec2(1, 0), glm::vec2(0, 1)};
 
     glm::vec2 gridSize = Utils::getGridSize(tilemap);
