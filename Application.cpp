@@ -43,6 +43,8 @@ void Application::init() {
 
     cursorInGameMode = true;
     bDrawPoints = false;
+    repMode = AVG;
+    clusterMode = VOXEL;
 }
 
 bool Application::update(int deltaTime) {
@@ -78,16 +80,33 @@ void Application::render() {
 
     ImGui::Separator(); // ------------
 
+    // Representative strategy
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    ImGui::Text("Representative computation strategy:");
+    ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
+        
+    const char* repItems[] = {"[AVG] Average", "[QEM] Quadric Error Metrics"};
+
+    if (ImGui::Combo("", &repMode, repItems, IM_ARRAYSIZE(repItems))) {
+        TriangleMesh::clearMeshes();
+        cout << "\n\n\n---- Switching to representative computation strategy: " << repItems[repMode] << " ---- \n" << endl;
+        scene.setupMuseumScene(false);
+    }
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator(); // ------------
+
+    // Clustering strategy
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
     ImGui::Text("Vertex clustering strategy:");
-    ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it");
-        
-    const char* items[] = {"[AVG] Octree average", "[QEM] Quadric Error Metrics"};
-    static int item_current = 0;
-    if (ImGui::Combo("", &item_current, items, IM_ARRAYSIZE(items))) {
+    ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
+    
+    const char* clusterItems[] = {"[VOX] Voxel clustering", "[VOX + NC] Voxel + Normal clustering"};
+    
+    if (ImGui::Combo("", &clusterMode, clusterItems, IM_ARRAYSIZE(clusterItems))) {
         TriangleMesh::clearMeshes();
-        cout << "\n\n\n---- Switching to vertex cluster strategy: " << items[item_current] << " ---- \n" << endl;
-        scene.setupMuseumScene(item_current, false);
+        cout << "\n\n\n---- Switching to vertex cluster strategy: " << clusterItems[clusterMode] << " ---- \n" << endl;
+        scene.setupMuseumScene(false);
     }
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 

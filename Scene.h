@@ -23,7 +23,7 @@ public:
 
     void init();
     void setupGridScene();
-    void setupMuseumScene(bool useQEM=false, bool initCamera=true);
+    void setupMuseumScene(bool initCamera=true);
     void update(float deltaTime);
     void render();
     void updateKeyPressedEvents(float deltaTime);

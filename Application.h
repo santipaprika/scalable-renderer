@@ -48,6 +48,8 @@ public:
     // Flags
     bool bDrawPoints;
 	bool bPolygonFill;                // Draw filled faces or wireframe
+    int repMode;                      // Representative computation mode
+    int clusterMode;                  // Clustering mode
 
 private:
 	bool bPlay;                       // Continue?

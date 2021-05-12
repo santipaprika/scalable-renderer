@@ -116,26 +116,34 @@ glm::vec3 TriangleMesh::getExtents() const {
     return maxAABB - minAABB;
 }
 
-TriangleMesh *TriangleMesh::computeLODs(Octree *octree, int clusterMode) {
+TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     // contains the quadrics associated to each vertex index
     unordered_map<int, unordered_set<Plane *>> vertexToQuadric;
     unordered_map<int, vector<int>> vertexToNormalCluster;
 
-    if (clusterMode == QEM || clusterMode == QEM_N) {
-        vertexToQuadric = associateVerticesToQuadrics();
-        if (clusterMode == QEM_N)
-            vertexToNormalCluster = associateVerticesToNormalClusters(vertexToQuadric);
-    }
+    int repMode = Application::instance().repMode;
+    int clusterMode = Application::instance().clusterMode;
 
     Octree *vertexOctree[vertices.size()] = {};
 
-    // fill and subdivide octree
-    for (int i = 0; i < vertices.size(); i++) {
-        vertexOctree[i] = octree->evaluateVertex(vertices[i], vertexToQuadric, vertexToNormalCluster, i, clusterMode);
+    if (repMode == QEM) {
+        vertexToQuadric = associateVerticesToQuadrics();
+        if (clusterMode == VOXEL_AND_NORMAL)
+            vertexToNormalCluster = associateVerticesToNormalClusters(vertexToQuadric);
+
+        // fill and subdivide octree
+        for (int i = 0; i < vertices.size(); i++) {
+            vertexOctree[i] = octree->evaluateVertex(vertices[i], vertexToQuadric, vertexToNormalCluster, i);
+        }
+    } else {
+        // fill and subdivide octree
+        for (int i = 0; i < vertices.size(); i++) {
+            vertexOctree[i] = octree->evaluateVertex(vertices[i], i);
+        }
     }
 
     // update each node's representative
-    octree->computeRepresentatives(clusterMode);
+    octree->computeRepresentatives();
 
     // this will store the index of the new vertices created from the ones inside each octree
     unordered_map<int, int> octreeIdxDict;
@@ -148,7 +156,7 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree, int clusterMode) {
 
     int count = 0;
 
-    if (clusterMode == QEM_N) {
+    if (false /*clusterMode == QEM_N*/) {
         for (int i = 0; i < vertices.size(); i++) {
             // add vertex coordinate
             if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
@@ -244,7 +252,7 @@ unordered_map<int, vector<int>> TriangleMesh::associateVerticesToNormalClusters(
 unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
 
 // get mesh or create (and return) it if path has not been loaded before
-TriangleMesh *TriangleMesh::Get(string filename, int clusterMode) {
+TriangleMesh *TriangleMesh::Get(string filename) {
     if (meshes.find(filename) != meshes.end())
         return meshes.at(filename);
 
@@ -260,7 +268,7 @@ TriangleMesh *TriangleMesh::Get(string filename, int clusterMode) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
         Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
 
-        meshes[filename] = mesh->computeLODs(octree, clusterMode);
+        meshes[filename] = mesh->computeLODs(octree);
     }
 
     return mesh;

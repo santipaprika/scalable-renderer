@@ -37,13 +37,13 @@ class TriangleMesh {
     void computeAABB();
     glm::vec3 getExtents() const;
 
-    TriangleMesh *computeLODs(Octree *octree, int useQEM=0);
+    TriangleMesh *computeLODs(Octree *octree);
     vector<Plane *> generateQuadrics();
     unordered_map<int, unordered_set<Plane *>> associateVerticesToQuadrics();
     unordered_map<int, vector<int>> associateVerticesToNormalClusters(unordered_map<int, unordered_set<Plane *>> vertexToQuadric);
 
     // get mesh or create (and return) it if path has not been loaded before
-    static TriangleMesh *Get(string path, int useQEM=0);
+    static TriangleMesh *Get(string path);
     static void clearMeshes();
 
     vector<int> triangles;

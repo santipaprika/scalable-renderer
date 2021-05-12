@@ -9,7 +9,8 @@
 
 using namespace std;
 
-enum ClusterMode { AVG, QEM, QEM_N };
+enum RepresentativeMode { AVG, QEM };
+enum ClutseringMode { VOXEL, VOXEL_AND_NORMAL };
 
 class Octree
 {
@@ -38,12 +39,13 @@ public:
 
     glm::vec3 getPosition() const;
     Octree* evaluateVertex(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, unordered_map<int, vector<int>> vertexToNormalCluster,
-                            int idx=0, int clusterMode=AVG);
+                            int idx=0);
+    Octree* evaluateVertex(const glm::vec3 &vertex, int idx=0);
     int getIndex() const;
     void computeMeanPositions();
     void computeQEMPositions();
     void computeQEM_N_Positions();
-    void computeRepresentatives(int clusterMode=AVG);
+    void computeRepresentatives();
 
     glm::vec3 representatives[8];
     Octree *childs[8];

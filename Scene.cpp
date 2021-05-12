@@ -59,7 +59,7 @@ void Scene::setupGridScene()
     }
 }
 
-void Scene::setupMuseumScene(bool useQEM, bool initCamera)
+void Scene::setupMuseumScene(bool initCamera)
 {
     clearNodes();
 
@@ -116,7 +116,7 @@ void Scene::setupMuseumScene(bool useQEM, bool initCamera)
                 if (grid[y][x] == Tile::CUBE)
                     mesh = cube;
                 else
-                    mesh = TriangleMesh::Get("../models/" + modelsPath[grid[y][x] - (Tile::CUBE + 1)], useQEM);
+                    mesh = TriangleMesh::Get("../models/" + modelsPath[grid[y][x] - (Tile::CUBE + 1)]);
 
                 addNode(mesh, glm::vec3(j, 0, i));
             }
