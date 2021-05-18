@@ -1,8 +1,9 @@
 
 #include "Octree.h"
-#include "Application.h"
 
 #include <iostream>
+
+#include "Application.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
@@ -15,6 +16,9 @@ Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent
 
     for (int i = 0; i < 8; i++) {
         childs[i] = nullptr;
+        nClusteredVertices[i] = 0;
+        clusterAddedPosition[i] = glm::vec3(0.f);
+        clusteredRepresentatives[i] = glm::vec3(0.f);
     }
 
     position = glm::vec3(0.0f);
@@ -39,31 +43,19 @@ glm::vec3 Octree::getPosition() const {
     return position;
 }
 
-Octree *Octree::evaluateVertex(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, unordered_map<int, vector<int>> vertexToNormalCluster, 
-                                int idx) {
-    
-    int repMode = Application::instance().repMode;
+Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, unordered_map<int, unordered_set<int>> &vertexToNormalCluster,
+                                  int idx) {
     int clusterMode = Application::instance().clusterMode;
 
-    // add vertex contribution
-    switch (repMode)
-    {
-    case AVG:
-        addedPosition += vertex;
-        nVertices++;
-        break;
-    case QEM:
-        for (Plane *plane : vertexToQuadric[idx]) {
-            quadrics.push_back(plane);
-        }
+    for (Plane *plane : vertexToQuadric[idx]) {
+        quadrics.push_back(plane);
+    }
+
     // case QEM_N:
     //     for (Plane *plane : vertexToQuadric[idx]) {
     //         for (int i : vertexToNormalCluster[idx])
     //             clusteredQuadrics[i].push_back(plane);
     //     }
-    default:
-        break;
-    }
 
     // check if has reached maximum depth
     if (maxDepth == 0)
@@ -82,18 +74,23 @@ Octree *Octree::evaluateVertex(const glm::vec3 &vertex, unordered_map<int, unord
         childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
     }
 
-    return childs[z * 4 + y * 2 + x]->evaluateVertex(vertex, vertexToQuadric, vertexToNormalCluster, idx);
+    return childs[z * 4 + y * 2 + x]->evaluateVertexQEM(vertex, vertexToQuadric, vertexToNormalCluster, idx);
 }
 
-Octree* Octree::evaluateVertex(const glm::vec3 &vertex, int idx) 
-{
-    int repMode = Application::instance().repMode;
+Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int idx) {
     int clusterMode = Application::instance().clusterMode;
 
-    // add vertex contribution
-    addedPosition += vertex;
-    nVertices++;
-    
+    if (clusterMode == VOXEL) {
+        addedPosition += vertex;
+        // add vertex contribution
+        nVertices++;
+
+    } else  // VOXEL AND NORMALS
+        for (int i : vertexToNormalCluster[idx]) {
+            nClusteredVertices[i]++;
+            clusterAddedPosition[i] += vertex;
+        }
+
     // check if has reached maximum depth
     if (maxDepth == 0)
         return this;
@@ -111,7 +108,7 @@ Octree* Octree::evaluateVertex(const glm::vec3 &vertex, int idx)
         childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
     }
 
-    return childs[z * 4 + y * 2 + x]->evaluateVertex(vertex, idx);
+    return childs[z * 4 + y * 2 + x]->evaluateVertexAVG(vertex, vertexToNormalCluster, idx);
 }
 
 int Octree::getIndex() const {
@@ -123,7 +120,17 @@ void Octree::computeMeanPositions() {
         if (childs[i])
             childs[i]->computeMeanPositions();
     }
+
     position = addedPosition / (float)nVertices;
+}
+
+void Octree::computeMeanNClusterPositions() {
+    for (int i = 0; i < 8; i++) {
+        if (childs[i])
+            childs[i]->computeMeanNClusterPositions();
+
+        clusteredRepresentatives[i] = clusterAddedPosition[i] / (float)nClusteredVertices[i];
+    }
 }
 
 void Octree::computeQEMPositions() {
@@ -135,31 +142,27 @@ void Octree::computeQEMPositions() {
     position = Plane::computePointMinimizingQEM(quadrics);
 }
 
-void Octree::computeQEM_N_Positions() {
+void Octree::computeQEMNClusterPositions() {
     for (int i = 0; i < 8; i++) {
         if (childs[i])
-            childs[i]->computeQEM_N_Positions();
+            childs[i]->computeQEMNClusterPositions();
 
-        representatives[i] = Plane::computePointMinimizingQEM(clusteredQuadrics[i]);
+        // representatives[i] = Plane::computePointMinimizingQEM(clusteredQuadrics[i]);
     }
 }
 
-void Octree::computeRepresentatives() 
-{
+void Octree::computeRepresentatives() {
     int repMode = Application::instance().repMode;
+    int clusterMode = Application::instance().clusterMode;
 
-    switch (repMode)
-    {
-    case AVG:
-        computeMeanPositions();
-        break;
-    case QEM:
-        computeQEMPositions();
-        break;
-    // case QEM_N:
-    //     computeQEM_N_Positions();
-    //     break;
-    default:
-        break;
+    switch (repMode) {
+        case AVG:
+            (clusterMode == VOXEL) ? computeMeanPositions() : computeMeanNClusterPositions();
+            break;
+        case QEM:
+            (clusterMode == VOXEL) ? computeQEMPositions() : computeQEMNClusterPositions();
+            break;
+        default:
+            break;
     }
 }
