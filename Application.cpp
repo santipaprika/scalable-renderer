@@ -82,28 +82,30 @@ void Application::render() {
 
     // Representative strategy
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
+    
     ImGui::Text("Representative computation strategy:");
     ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
         
     const char* repItems[] = {"[AVG] Average", "[QEM] Quadric Error Metrics"};
-
-    if (ImGui::Combo("", &repMode, repItems, IM_ARRAYSIZE(repItems))) {
+    if (ImGui::Combo("##repmode", &repMode, repItems, IM_ARRAYSIZE(repItems))) {
         TriangleMesh::clearMeshes();
         cout << "\n\n\n---- Switching to representative computation strategy: " << repItems[repMode] << " ---- \n" << endl;
         scene.setupMuseumScene(false);
     }
+
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::Separator(); // ------------
 
     // Clustering strategy
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
     ImGui::Text("Vertex clustering strategy:");
     ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
     
     const char* clusterItems[] = {"[VOX] Voxel clustering", "[VOX + NC] Voxel + Normal clustering"};
     
-    if (ImGui::Combo("", &clusterMode, clusterItems, IM_ARRAYSIZE(clusterItems))) {
+    if (ImGui::Combo("##clustermode", &clusterMode, clusterItems, IM_ARRAYSIZE(clusterItems))) {
         TriangleMesh::clearMeshes();
         cout << "\n\n\n---- Switching to vertex cluster strategy: " << clusterItems[clusterMode] << " ---- \n" << endl;
         scene.setupMuseumScene(false);
