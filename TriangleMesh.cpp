@@ -182,12 +182,14 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
             }
         }
     }
-    
+
     std::unordered_map<glm::vec3, bool> facesDict;
 
     if (clusterMode == VOXEL) {
         for (int i = 0; i < triangles.size(); i += 3) {
-            glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[triangles[i]]->getIndex()], octreeIdxDict[vertexOctree[triangles[i + 1]]->getIndex()], octreeIdxDict[vertexOctree[triangles[i + 2]]->getIndex()]);
+            glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[triangles[i]]->getIndex()], 
+                                        octreeIdxDict[vertexOctree[triangles[i + 1]]->getIndex()], 
+                                        octreeIdxDict[vertexOctree[triangles[i + 2]]->getIndex()]);
 
             // Face vertices
             if (face.x == face.y || face.x == face.z || face.y == face.z)
@@ -228,13 +230,13 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
                 if (triangleFound) break;
             }
 
-            // if (facesDict.find(face) != facesDict.end() || facesDict.find(glm::vec3(face.z, face.x, face.y)) != facesDict.end() || facesDict.find(glm::vec3(face.y, face.z, face.x)) != facesDict.end())
-            //     continue;
+            if (facesDict.find(face) != facesDict.end() || facesDict.find(glm::vec3(face.z, face.x, face.y)) != facesDict.end() || facesDict.find(glm::vec3(face.y, face.z, face.x)) != facesDict.end())
+                continue;
 
             if (triangleFound)
                 LOD->addTriangle((int)face.x, (int)face.y, (int)face.z);
 
-            // facesDict[face] = true;
+            facesDict[face] = true;
         }
     }
     cout << "Simplified model faces: " << LOD->triangles.size()/3 << endl;
