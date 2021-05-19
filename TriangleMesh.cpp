@@ -162,20 +162,12 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     if (clusterMode == VOXEL_AND_NORMAL) {
         for (int i = 0; i < vertices.size(); i++) {
             // add vertex coordinate
-            if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
-                LOD->addVertex(vertexOctree[i]->getPosition());
-
-                for (int j : vertexToNormalCluster[i]) {
-                    if (vertexOctree[i]->nClusteredVertices[j] <= 0) {
-                        cout << "CONTINUIONG " << endl;
-                        continue;
-                    }
-
+            for (int j : vertexToNormalCluster[i]) {
+                if (octreeIdxDict.find(vertexOctree[i]->getIndex()*8 + j) == octreeIdxDict.end()) {
                     LOD->addVertex(vertexOctree[i]->clusteredRepresentatives[j]);
 
                     // update dict
-                    octreeIdxDict[vertexOctree[i]->getIndex() * 8 + j] = count;
-                    count++;
+                    octreeIdxDict[vertexOctree[i]->getIndex() * 8 + j] = count++;
                 }
             }
         }
@@ -186,12 +178,11 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
                 LOD->addVertex(vertexOctree[i]->getPosition());
 
                 // update dict
-                octreeIdxDict[vertexOctree[i]->getIndex()] = count;
-                count++;
+                octreeIdxDict[vertexOctree[i]->getIndex()] = count++;
             }
         }
     }
-
+    
     std::unordered_map<glm::vec3, bool> facesDict;
 
     if (clusterMode == VOXEL) {
@@ -210,7 +201,6 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
         }
     } else {
         for (int i = 0; i < triangles.size(); i += 3) {
-
             glm::vec3 face(0.f);
             bool triangleFound = false;
             // try all possible new faces
@@ -220,11 +210,10 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
                     int clusterIdx_2 = *it2;
                     for (auto it3 = vertexToNormalCluster[triangles[i + 2]].begin(); it3 != vertexToNormalCluster[triangles[i + 2]].end(); ++it3) {
                         int clusterIdx_3 = *it3;
-
                         face = glm::vec3(octreeIdxDict[vertexOctree[triangles[i]]->getIndex() * 8 + clusterIdx_1],
-                                                   octreeIdxDict[vertexOctree[triangles[i]]->getIndex() * 8 + clusterIdx_2],
-                                                   octreeIdxDict[vertexOctree[triangles[i]]->getIndex() * 8 + clusterIdx_3]);
-            
+                                         octreeIdxDict[vertexOctree[triangles[i + 1]]->getIndex() * 8 + clusterIdx_2],
+                                         octreeIdxDict[vertexOctree[triangles[i + 2]]->getIndex() * 8 + clusterIdx_3]);
+
                         // Face vertices
                         if (face.x == face.y || face.x == face.z || face.y == face.z)
                             continue;
@@ -244,11 +233,11 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
 
             if (triangleFound)
                 LOD->addTriangle((int)face.x, (int)face.y, (int)face.z);
-                
+
             // facesDict[face] = true;
         }
     }
-    cout << "Simplified model faces: " << LOD->triangles.size() << endl;
+    cout << "Simplified model faces: " << LOD->triangles.size()/3 << endl;
     cout << "Simplified model vertices: " << LOD->vertices.size() << endl;
 
     delete octree;
