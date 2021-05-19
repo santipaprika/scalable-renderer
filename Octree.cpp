@@ -47,15 +47,17 @@ Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, un
                                   int idx) {
     int clusterMode = Application::instance().clusterMode;
 
-    for (Plane *plane : vertexToQuadric[idx]) {
-        quadrics.push_back(plane);
-    }
+    if (clusterMode == VOXEL) {
+        for (Plane *plane : vertexToQuadric[idx]) {
+            quadrics.push_back(plane);
+        }
 
-    // case QEM_N:
-    //     for (Plane *plane : vertexToQuadric[idx]) {
-    //         for (int i : vertexToNormalCluster[idx])
-    //             clusteredQuadrics[i].push_back(plane);
-    //     }
+    } else {  // VOXEL AND NORMALS
+        for (Plane *plane : vertexToQuadric[idx]) {
+            for (int i : vertexToNormalCluster[idx])
+                clusteredQuadrics[i].push_back(plane);
+        }
+    }
 
     // check if has reached maximum depth
     if (maxDepth == 0)
@@ -147,7 +149,7 @@ void Octree::computeQEMNClusterPositions() {
         if (childs[i])
             childs[i]->computeQEMNClusterPositions();
 
-        // representatives[i] = Plane::computePointMinimizingQEM(clusteredQuadrics[i]);
+        clusteredRepresentatives[i] = Plane::computePointMinimizingQEM(clusteredQuadrics[i]);
     }
 }
 

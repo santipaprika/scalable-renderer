@@ -28,6 +28,7 @@ private:
     vector<Plane*> quadrics;
 
     // NORMAL CLUSTERING
+    vector<Plane*> clusteredQuadrics[8];
     glm::vec3 clusterAddedPosition[8];
 
     static int counter;
