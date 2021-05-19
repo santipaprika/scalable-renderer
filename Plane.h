@@ -2,7 +2,7 @@
 #define __PLANE_H__
 
 #include <glm/glm.hpp>
-#include <vector>
+#include <Eigen/Core>
 
 class Plane
 {
@@ -13,8 +13,9 @@ public:
     ~Plane();
 
     glm::vec3 getNormal(); 
+    Eigen::Vector4d getPlaneParams();
 
-    static glm::vec3 computePointMinimizingQEM(std::vector<Plane*> planes);
+    static glm::vec3 computePointMinimizingQEM(Eigen::Matrix4d Q);
 };
 
 #endif // __PLANE_H__

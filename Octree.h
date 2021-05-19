@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include "glm/glm.hpp"
 #include "Plane.h"
+#include <Eigen/Core>
 
 using namespace std;
 
@@ -25,7 +26,7 @@ private:
     int idx;
 
     // QEM
-    vector<Plane*> quadrics;
+    Eigen::Matrix4d Q;
 
     // NORMAL CLUSTERING
     vector<Plane*> clusteredQuadrics[8];
@@ -35,12 +36,12 @@ private:
 
 public:
     // Octree(vector<glm::vec3> vertices, int depth, glm::vec3 minAABB, glm::vec3 maxAABB, Octree *parent = nullptr);
-    Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent = nullptr);
+    Octree(int maxDepth, glm::vec3 minAABB, float halfLength, bool root=false);
     ~Octree();
 
     glm::vec3 getPosition() const;
-    Octree* evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, unordered_map<int, unordered_set<int>> &vertexToNormalCluster,
-                            int idx=0);
+    Octree* evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, vector<unordered_set<Plane*>> &octreeToQuadric,
+                            unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int idx=0);
     Octree* evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int idx=0);
     int getIndex() const;
     void computeMeanPositions();
@@ -52,7 +53,6 @@ public:
     int nClusteredVertices[8];
     glm::vec3 clusteredRepresentatives[8];
     Octree *childs[8];
-    Octree *parent;
 };
 
 #endif // __OCTREE_H__

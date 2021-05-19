@@ -7,12 +7,10 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent) {
+Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, bool root) {
     this->maxDepth = maxDepth;
     this->minAABB = minAABB;
     this->halfLength = halfLength;
-
-    this->parent = parent;
 
     for (int i = 0; i < 8; i++) {
         childs[i] = nullptr;
@@ -25,8 +23,13 @@ Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent
     addedPosition = glm::vec3(0.0f);
     nVertices = 0;
 
+    if (root)
+        counter = 0;
+
     idx = counter;
     counter++;
+
+    Q = Eigen::Matrix4d::Zero();
 }
 
 int Octree::counter;
@@ -35,25 +38,34 @@ Octree::~Octree() {
     for (int i = 0; i < 8; i++)
         if (childs[i])
             delete childs[i];
-
-    // delete this;
 }
 
 glm::vec3 Octree::getPosition() const {
     return position;
 }
 
-Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, unordered_map<int, unordered_set<int>> &vertexToNormalCluster,
-                                  int idx) {
+Octree* Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, vector<unordered_set<Plane*>> &octreeToQuadric,
+                                unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int vertexIdx) 
+{
     int clusterMode = Application::instance().clusterMode;
+    if (octreeToQuadric.size() <= idx) {
+        octreeToQuadric.push_back({});
+        unordered_set<Plane*> planes;
+        octreeToQuadric[idx] = planes;
+    }
 
     if (clusterMode == VOXEL) {
-        for (Plane *plane : vertexToQuadric[idx]) {
-            quadrics.push_back(plane);
+        for (Plane *plane : vertexToQuadric[vertexIdx]) {
+            // Add quadric contribution
+            if (octreeToQuadric[idx].empty() || octreeToQuadric[idx].find(plane) == octreeToQuadric[idx].end()) {
+                Eigen::Vector4d q = Eigen::Vector4d(plane->getPlaneParams());
+                Q += q*q.transpose();
+                octreeToQuadric[idx].insert(plane);
+            }
         }
 
     } else {  // VOXEL AND NORMALS
-        for (Plane *plane : vertexToQuadric[idx]) {
+        for (Plane *plane : vertexToQuadric[vertexIdx]) {
             for (int i : vertexToNormalCluster[idx])
                 clusteredQuadrics[i].push_back(plane);
         }
@@ -73,13 +85,15 @@ Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, un
 
     if (!childs[z * 4 + y * 2 + x]) {
         glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
-        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
+        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f);
     }
 
-    return childs[z * 4 + y * 2 + x]->evaluateVertexQEM(vertex, vertexToQuadric, vertexToNormalCluster, idx);
+
+    return childs[z * 4 + y * 2 + x]->evaluateVertexQEM(vertex, vertexToQuadric, octreeToQuadric, vertexToNormalCluster, vertexIdx);
 }
 
-Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int idx) {
+
+Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int vertexIdx) {
     int clusterMode = Application::instance().clusterMode;
 
     if (clusterMode == VOXEL) {
@@ -88,7 +102,7 @@ Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, un
         nVertices++;
 
     } else  // VOXEL AND NORMALS
-        for (int i : vertexToNormalCluster[idx]) {
+        for (int i : vertexToNormalCluster[vertexIdx]) {
             nClusteredVertices[i]++;
             clusterAddedPosition[i] += vertex;
         }
@@ -107,10 +121,10 @@ Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, un
 
     if (!childs[z * 4 + y * 2 + x]) {
         glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
-        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
+        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f);
     }
 
-    return childs[z * 4 + y * 2 + x]->evaluateVertexAVG(vertex, vertexToNormalCluster, idx);
+    return childs[z * 4 + y * 2 + x]->evaluateVertexAVG(vertex, vertexToNormalCluster, vertexIdx);
 }
 
 int Octree::getIndex() const {
@@ -141,7 +155,7 @@ void Octree::computeQEMPositions() {
             childs[i]->computeQEMPositions();
     }
 
-    position = Plane::computePointMinimizingQEM(quadrics);
+    position = Plane::computePointMinimizingQEM(Q);
 }
 
 void Octree::computeQEMNClusterPositions() {
@@ -149,7 +163,7 @@ void Octree::computeQEMNClusterPositions() {
         if (childs[i])
             childs[i]->computeQEMNClusterPositions();
 
-        clusteredRepresentatives[i] = Plane::computePointMinimizingQEM(clusteredQuadrics[i]);
+        // clusteredRepresentatives[i] = Plane::computePointMinimizingQEM(clusteredQuadrics[i]);
     }
 }
 

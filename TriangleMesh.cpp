@@ -124,7 +124,7 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     int repMode = Application::instance().repMode;
     int clusterMode = Application::instance().clusterMode;
 
-    Octree *vertexOctree[vertices.size()] = {};
+    Octree* vertexOctree[vertices.size()] = {nullptr};
 
     if (clusterMode == VOXEL_AND_NORMAL) {
         vertexToQuadric = associateVerticesToQuadrics();
@@ -135,8 +135,9 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
             vertexToQuadric = associateVerticesToQuadrics();
 
         // fill and subdivide octree
+        vector<unordered_set<Plane*>> octreeToQuadric;
         for (int i = 0; i < vertices.size(); i++) {
-            vertexOctree[i] = octree->evaluateVertexQEM(vertices[i], vertexToQuadric, vertexToNormalCluster, i);
+            vertexOctree[i] = octree->evaluateVertexQEM(vertices[i], vertexToQuadric, OUT octreeToQuadric, vertexToNormalCluster, i);
         }
     } else {
         // fill and subdivide octree
@@ -156,7 +157,6 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
 
     // new mesh here
     TriangleMesh *LOD = new TriangleMesh();
-
     int count = 0;
 
     if (clusterMode == VOXEL_AND_NORMAL) {
@@ -306,8 +306,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         glm::vec3 center = mesh->minAABB + mesh->getExtents() / 2.0f;
         float maxExtent = max(mesh->getExtents().x, max(mesh->getExtents().y, mesh->getExtents().z));
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
-        Octree *octree = new Octree(4, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
-
+        Octree *octree = new Octree(8, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f, true);
         meshes[filename] = mesh->computeLODs(octree);
     }
 

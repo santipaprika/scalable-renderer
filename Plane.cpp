@@ -1,7 +1,6 @@
 #include "Plane.h"
 
 #include <iostream>
-#include <Eigen/Core>
 #include <Eigen/SVD>
 
 using namespace Eigen;
@@ -27,13 +26,12 @@ glm::vec3 Plane::getNormal()
     return glm::vec3(a,b,c);
 }
 
-glm::vec3 Plane::computePointMinimizingQEM(std::vector<Plane *> planes) {
-    Matrix4d Q = Matrix4d::Zero();
-    for (Plane *plane : planes) {
-        Vector4d q = Vector4d(plane->a,plane->b,plane->c,plane->d);
-        Q += q*q.transpose();
-    }
+Vector4d Plane::getPlaneParams() 
+{
+    return Vector4d(a,b,c,d);
+}
 
+glm::vec3 Plane::computePointMinimizingQEM(Matrix4d Q) {
     Q(3,0) = 0.0;
     Q(3,1) = 0.0;
     Q(3,2) = 0.0;
