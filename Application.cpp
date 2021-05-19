@@ -76,6 +76,8 @@ void Application::render() {
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
     ImGui::Checkbox("Render points", &bDrawPoints);
+    if (ImGui::Checkbox("Wireframe", &bPolygonFill))
+        scene.switchPolygonMode();
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::Separator(); // ------------
