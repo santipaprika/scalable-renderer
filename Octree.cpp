@@ -15,6 +15,7 @@ Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, bool root) {
     for (int i = 0; i < 8; i++) {
         childs[i] = nullptr;
         nClusteredVertices[i] = 0;
+        NormalQ[i] = Eigen::Matrix4d::Zero();
         clusterAddedPosition[i] = glm::vec3(0.f);
         clusteredRepresentatives[i] = glm::vec3(0.f);
     }
@@ -44,14 +45,13 @@ glm::vec3 Octree::getPosition() const {
     return position;
 }
 
-Octree* Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, vector<unordered_set<Plane*>> &octreeToQuadric,
-                                unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int vertexIdx) 
-{
+Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, vector<unordered_set<Plane *>> &octreeToQuadric,
+                                  unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int vertexIdx) {
     int clusterMode = Application::instance().clusterMode;
-    if (octreeToQuadric.size() <= idx) {
-        octreeToQuadric.push_back({});
-        unordered_set<Plane*> planes;
-        octreeToQuadric[idx] = planes;
+    if (octreeToQuadric.size() <= idx*8) {
+        int rep = (clusterMode == VOXEL_AND_NORMAL) ? 8 : 1;
+        for (int i = 0; i < rep; i++)
+            octreeToQuadric.push_back({});
     }
 
     if (clusterMode == VOXEL) {
@@ -59,15 +59,20 @@ Octree* Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, un
             // Add quadric contribution
             if (octreeToQuadric[idx].empty() || octreeToQuadric[idx].find(plane) == octreeToQuadric[idx].end()) {
                 Eigen::Vector4d q = Eigen::Vector4d(plane->getPlaneParams());
-                Q += q*q.transpose();
+                Q += q * q.transpose();
                 octreeToQuadric[idx].insert(plane);
             }
         }
 
     } else {  // VOXEL AND NORMALS
         for (Plane *plane : vertexToQuadric[vertexIdx]) {
-            for (int i : vertexToNormalCluster[idx])
-                clusteredQuadrics[i].push_back(plane);
+            for (int i : vertexToNormalCluster[vertexIdx]) {
+                if (octreeToQuadric[idx * 8 + i].empty() || octreeToQuadric[idx * 8 + i].find(plane) == octreeToQuadric[idx * 8 + i].end()) {
+                    Eigen::Vector4d q = Eigen::Vector4d(plane->getPlaneParams());
+                    NormalQ[i] += q * q.transpose();
+                    octreeToQuadric[idx * 8 + i].insert(plane);
+                }
+            }
         }
     }
 
@@ -88,10 +93,8 @@ Octree* Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, un
         childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f);
     }
 
-
     return childs[z * 4 + y * 2 + x]->evaluateVertexQEM(vertex, vertexToQuadric, octreeToQuadric, vertexToNormalCluster, vertexIdx);
 }
-
 
 Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int vertexIdx) {
     int clusterMode = Application::instance().clusterMode;
@@ -163,7 +166,7 @@ void Octree::computeQEMNClusterPositions() {
         if (childs[i])
             childs[i]->computeQEMNClusterPositions();
 
-        // clusteredRepresentatives[i] = Plane::computePointMinimizingQEM(clusteredQuadrics[i]);
+        clusteredRepresentatives[i] = Plane::computePointMinimizingQEM(NormalQ[i]);
     }
 }
 

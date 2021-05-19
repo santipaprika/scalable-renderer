@@ -29,7 +29,7 @@ private:
     Eigen::Matrix4d Q;
 
     // NORMAL CLUSTERING
-    vector<Plane*> clusteredQuadrics[8];
+    Eigen::Matrix4d NormalQ[8];
     glm::vec3 clusterAddedPosition[8];
 
     static int counter;
