@@ -182,13 +182,19 @@ unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
 
 // get mesh or create (and return) it if path has not been loaded before
 TriangleMesh *TriangleMesh::Get(string filename) {
+    TriangleMesh *mesh = nullptr;
     if (meshes.find(filename) != meshes.end())
-        return meshes.at(filename);
+        mesh = meshes[filename];
+    else if (readLODS(filename))
+        mesh = meshes[filename];
 
-    if (readLODS(filename))
-        return meshes[filename];
+    if (mesh) {
+        for (int i = 0; i < Application::instance().currentLOD - Application::instance().minLODLevel; i++)
+            mesh = mesh->nextLOD;
+        return mesh;
+    }
 
-    TriangleMesh *mesh = new TriangleMesh();
+    mesh = new TriangleMesh();
     bool bSuccess = PLYReader::readMesh(filename, (*mesh));
     if (bSuccess) {
         mesh->initializeMesh();
@@ -205,12 +211,13 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         meshes[filename] = mesh->computeLODs(octree);
         writeLODS(filename);
     }
-    // delete mesh;
+    delete mesh;
 
+    mesh = meshes[filename];
     for (int i = 0; i < Application::instance().currentLOD - Application::instance().minLODLevel; i++)
         mesh = mesh->nextLOD;
 
-    return meshes[filename];
+    return mesh;
 }
 
 bool TriangleMesh::writeLODS(string filename) {
@@ -261,6 +268,7 @@ bool TriangleMesh::readLODS(string filename) {
     }
 
     meshes[filename] = mesh;
+
     return true;
 }
 
