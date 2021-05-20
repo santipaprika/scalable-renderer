@@ -4,6 +4,7 @@
 
 #include "Application.h"
 #include "PLYReader.h"
+#include "PLYWriter.h"
 #include "Scene.h"
 
 using namespace std;
@@ -308,6 +309,16 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
         Octree *octree = new Octree(8, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f, true);
         meshes[filename] = mesh->computeLODs(octree);
+        PLYWriter::writeMesh("test.ply", *meshes[filename]);
+        delete meshes[filename];
+        delete mesh;
+        mesh = new TriangleMesh();
+        
+        bool bSuccess = PLYReader::readMesh("test.ply", (*mesh));
+        if (bSuccess) {
+            mesh->initializeMesh();
+            meshes[filename] = mesh;
+        }
     }
 
     return mesh;
