@@ -49,6 +49,8 @@ class TriangleMesh {
     static void clearMeshes();
     TriangleMesh* getPreviousLOD();
     TriangleMesh* getNextLOD();
+    void fillOctree(Octree* octree, vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
+    TriangleMesh* fillLODs(vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
 
     vector<int> triangles;
     vector<glm::vec3> vertices;

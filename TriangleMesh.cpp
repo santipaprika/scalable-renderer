@@ -120,17 +120,166 @@ glm::vec3 TriangleMesh::getExtents() const {
 }
 
 TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
-    // vector containing lods
-    vector<TriangleMesh *> LODS;
-
     // contains the quadrics associated to each vertex index
-    unordered_map<int, unordered_set<Plane *>> vertexToQuadric;
+    vector<Octree *> vertexOctree;
+    // vertexOctree.resize(vertices.size());
+
     unordered_map<int, unordered_set<int>> vertexToNormalCluster;
 
+    fillOctree(octree, vertexOctree, vertexToNormalCluster);
+
+    // update each node's representative
+    octree->computeRepresentatives();
+
+    TriangleMesh *LOD = fillLODs(vertexOctree, vertexToNormalCluster);
+
+    delete octree;
+
+    return LOD;
+}
+
+vector<Plane *> TriangleMesh::generateQuadrics() {
+    vector<Plane *> facePlane;
+
+    for (int i = 0; i < triangles.size(); i += 3) {
+        facePlane.push_back(new Plane(vertices[triangles[i]], vertices[triangles[i + 1]], vertices[triangles[i + 2]]));
+    }
+
+    return facePlane;
+}
+
+unordered_map<int, unordered_set<Plane *>> TriangleMesh::associateVerticesToQuadrics() {
+    // contains the plane containing each face
+    vector<Plane *> faceQuadrics = generateQuadrics();
+
+    unordered_map<int, unordered_set<Plane *>> vertexQuadrics;
+
+    for (int i = 0; i < triangles.size(); i++) {
+        if (vertexQuadrics.find(triangles[i]) == vertexQuadrics.end()) {
+            vertexQuadrics.insert({triangles[i], unordered_set<Plane *>{faceQuadrics[i / 3]}});
+        } else {
+            vertexQuadrics[triangles[i]].insert(faceQuadrics[i / 3]);
+        }
+    }
+
+    return vertexQuadrics;
+}
+
+unordered_map<int, unordered_set<int>> TriangleMesh::associateVerticesToNormalClusters(unordered_map<int, unordered_set<Plane *>> vertexToQuadric) {
+    unordered_map<int, unordered_set<int>> vertexToNormalCluster;
+
+    for (int i = 0; i < vertices.size(); i++) {
+        for (Plane *plane : vertexToQuadric[i]) {
+            glm::vec3 n = plane->getNormal();
+            vertexToNormalCluster[i].insert((n.x > 0) * 4 + (n.y > 0) * 2 + (n.z > 0));
+        }
+    }
+
+    return vertexToNormalCluster;
+}
+
+unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
+
+// get mesh or create (and return) it if path has not been loaded before
+TriangleMesh *TriangleMesh::Get(string filename) {
+    if (meshes.find(filename) != meshes.end())
+        return meshes.at(filename);
+
+    if (readLODS(filename))
+        return meshes[filename];
+
+    TriangleMesh *mesh = new TriangleMesh();
+    bool bSuccess = PLYReader::readMesh(filename, (*mesh));
+    if (bSuccess) {
+        mesh->initializeMesh();
+
+        // create octree
+        glm::vec3 center = mesh->minAABB + mesh->getExtents() / 2.0f;
+        float maxExtent = max(mesh->getExtents().x, max(mesh->getExtents().y, mesh->getExtents().z));
+        glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
+
+        // LODS
+        Octree *octree = new Octree(Application::instance().maxLODLevel, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
+
+        // compute all LODS and get the lowest
+        meshes[filename] = mesh->computeLODs(octree);
+        writeLODS(filename);
+    }
+    // delete mesh;
+
+    for (int i = 0; i < Application::instance().currentLOD - Application::instance().minLODLevel; i++)
+        mesh = mesh->nextLOD;
+
+    return meshes[filename];
+}
+
+bool TriangleMesh::writeLODS(string filename) {
+    int minLOD = Application::instance().minLODLevel;
+    int maxLOD = Application::instance().maxLODLevel;
+    string repModeStr = (Application::instance().repMode == AVG) ? "AVG" : "QEM";
+    string clusterModeStr = (Application::instance().clusterMode == VOXEL) ? "VOX" : "VOX-NC";
+    TriangleMesh *mesh = meshes[filename];
+    for (int i = minLOD; i <= maxLOD; i++) {
+        string spec_filename = filename + "_" + repModeStr + "_" + clusterModeStr + "_" + to_string(i) + ".ply";
+        if (!PLYWriter::writeMesh(spec_filename, *mesh)) {
+            cout << "E0: Could not write " << spec_filename << "." << endl;
+            return false;
+        }
+        mesh = mesh->nextLOD;
+    }
+    return true;
+}
+
+bool TriangleMesh::readLODS(string filename) {
+    int minLOD = Application::instance().minLODLevel;
+    int maxLOD = Application::instance().maxLODLevel;
+    string repModeStr = (Application::instance().repMode == AVG) ? "AVG" : "QEM";
+    string clusterModeStr = (Application::instance().clusterMode == VOXEL) ? "VOX" : "VOX-NC";
+
+    TriangleMesh *mesh;
+    TriangleMesh *prevMesh;
+    for (int i = maxLOD; i >= minLOD; i--) {
+        mesh = new TriangleMesh();
+
+        if (i < maxLOD) {
+            mesh->nextLOD = prevMesh;
+            prevMesh->previousLOD = mesh;
+        }
+
+        bool bSuccess = PLYReader::readMesh(filename + "_" + repModeStr + "_" + clusterModeStr + "_" + to_string(i) + ".ply", (*mesh));
+        if (!bSuccess) {
+            while (mesh) {
+                prevMesh = mesh->nextLOD;
+                delete mesh;
+                mesh = prevMesh;
+            }
+            return false;
+        }
+
+        mesh->initializeMesh();
+        prevMesh = mesh;
+    }
+
+    meshes[filename] = mesh;
+    return true;
+}
+
+void TriangleMesh::clearMeshes() {
+    meshes.clear();
+}
+
+TriangleMesh *TriangleMesh::getPreviousLOD() {
+    return previousLOD ? previousLOD : this;
+}
+
+TriangleMesh *TriangleMesh::getNextLOD() {
+    return nextLOD ? nextLOD : this;
+}
+
+void TriangleMesh::fillOctree(Octree *octree, vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster) {
+    unordered_map<int, unordered_set<Plane *>> vertexToQuadric;
     int repMode = Application::instance().repMode;
     int clusterMode = Application::instance().clusterMode;
-
-    Octree *vertexOctree[vertices.size()] = {nullptr};
 
     if (clusterMode == VOXEL_AND_NORMAL) {
         vertexToQuadric = associateVerticesToQuadrics();
@@ -143,26 +292,27 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
         // fill and subdivide octree
         vector<unordered_set<Plane *>> octreeToQuadric;
         for (int i = 0; i < vertices.size(); i++) {
-            vertexOctree[i] = octree->evaluateVertexQEM(vertices[i], vertexToQuadric, OUT octreeToQuadric, vertexToNormalCluster, i);
+            vertexOctree.push_back(octree->evaluateVertexQEM(vertices[i], vertexToQuadric, OUT octreeToQuadric, vertexToNormalCluster, i));
         }
     } else {
         // fill and subdivide octree
         for (int i = 0; i < vertices.size(); i++) {
-            vertexOctree[i] = octree->evaluateVertexAVG(vertices[i], vertexToNormalCluster, i);
+            vertexOctree.push_back(octree->evaluateVertexAVG(vertices[i], vertexToNormalCluster, i));
         }
     }
+}
 
-    // update each node's representative
-    octree->computeRepresentatives();
+TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster) {
+    int clusterMode = Application::instance().clusterMode;
 
     TriangleMesh *LOD;
     TriangleMesh *prevLOD;
-    int diffLODS = max(1,Application::instance().maxLODLevel - Application::instance().minLODLevel);
+    int diffLODS = max(1, Application::instance().maxLODLevel - Application::instance().minLODLevel);
     for (int lod = 0; lod <= diffLODS; lod++) {
         LOD = new TriangleMesh();
 
         if (lod != 0) {
-            for (int i = 0; i<vertices.size(); i++)
+            for (int i = 0; i < vertices.size(); i++)
                 vertexOctree[i] = vertexOctree[i]->parent;
 
             LOD->nextLOD = prevLOD;
@@ -252,156 +402,15 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
                 facesDict[face] = true;
             }
         }
-        cout << "Creating LOD " << Application::instance().maxLODLevel-lod << ":" << endl;
+        cout << "Creating LOD " << Application::instance().maxLODLevel - lod << ":" << endl;
         cout << "\tSimplified model faces: " << LOD->triangles.size() / 3 << endl;
-        cout << "\tSimplified model vertices: " << LOD->vertices.size() << endl << endl;
+        cout << "\tSimplified model vertices: " << LOD->vertices.size() << endl
+             << endl;
 
         LOD->initializeMesh();
 
         prevLOD = LOD;
     }
-    delete octree;
 
     return LOD;
-}
-
-vector<Plane *> TriangleMesh::generateQuadrics() {
-    vector<Plane *> facePlane;
-
-    for (int i = 0; i < triangles.size(); i += 3) {
-        facePlane.push_back(new Plane(vertices[triangles[i]], vertices[triangles[i + 1]], vertices[triangles[i + 2]]));
-    }
-
-    return facePlane;
-}
-
-unordered_map<int, unordered_set<Plane *>> TriangleMesh::associateVerticesToQuadrics() {
-    // contains the plane containing each face
-    vector<Plane *> faceQuadrics = generateQuadrics();
-
-    unordered_map<int, unordered_set<Plane *>> vertexQuadrics;
-
-    for (int i = 0; i < triangles.size(); i++) {
-        if (vertexQuadrics.find(triangles[i]) == vertexQuadrics.end()) {
-            vertexQuadrics.insert({triangles[i], unordered_set<Plane *>{faceQuadrics[i / 3]}});
-        } else {
-            vertexQuadrics[triangles[i]].insert(faceQuadrics[i / 3]);
-        }
-    }
-
-    return vertexQuadrics;
-}
-
-unordered_map<int, unordered_set<int>> TriangleMesh::associateVerticesToNormalClusters(unordered_map<int, unordered_set<Plane *>> vertexToQuadric) {
-    unordered_map<int, unordered_set<int>> vertexToNormalCluster;
-
-    for (int i = 0; i < vertices.size(); i++) {
-        for (Plane *plane : vertexToQuadric[i]) {
-            glm::vec3 n = plane->getNormal();
-            vertexToNormalCluster[i].insert((n.x > 0) * 4 + (n.y > 0) * 2 + (n.z > 0));
-        }
-    }
-
-    return vertexToNormalCluster;
-}
-
-unordered_map<string, TriangleMesh *> TriangleMesh::meshes = {};
-
-// get mesh or create (and return) it if path has not been loaded before
-TriangleMesh *TriangleMesh::Get(string filename) {
-    if (meshes.find(filename) != meshes.end())
-        return meshes.at(filename);
-
-    if (readLODS(filename))
-        return meshes[filename];
-
-    TriangleMesh *mesh = new TriangleMesh();
-    bool bSuccess = PLYReader::readMesh(filename, (*mesh));
-    if (bSuccess) {
-        mesh->initializeMesh();
-        
-        // create octree
-        glm::vec3 center = mesh->minAABB + mesh->getExtents() / 2.0f;
-        float maxExtent = max(mesh->getExtents().x, max(mesh->getExtents().y, mesh->getExtents().z));
-        glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
-
-        // LODS
-        Octree *octree = new Octree(Application::instance().maxLODLevel, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
-
-        // compute all LODS and get the lowest
-        meshes[filename] = mesh->computeLODs(octree);
-        writeLODS(filename);
-    }
-    // delete mesh;
-
-    for (int i=0; i < Application::instance().currentLOD - Application::instance().minLODLevel; i++)
-        mesh = mesh->nextLOD;
-
-    return meshes[filename];
-}
-
-bool TriangleMesh::writeLODS(string filename) {
-    int minLOD = Application::instance().minLODLevel;
-    int maxLOD = Application::instance().maxLODLevel;
-    string repModeStr = (Application::instance().repMode == AVG) ? "AVG" : "QEM";
-    string clusterModeStr = (Application::instance().clusterMode == VOXEL) ? "VOX" : "VOX-NC";
-    TriangleMesh *mesh = meshes[filename];
-    for (int i = minLOD; i <= maxLOD; i++) {
-        string spec_filename = filename + "_" + repModeStr + "_" + clusterModeStr + "_" + to_string(i) + ".ply";
-        if (!PLYWriter::writeMesh(spec_filename, *mesh)) {
-            cout << "E0: Could not write " << spec_filename << "." << endl;
-            return false;
-        }
-        mesh = mesh->nextLOD;
-    }
-    return true;
-}
-
-bool TriangleMesh::readLODS(string filename) 
-{
-    int minLOD = Application::instance().minLODLevel;
-    int maxLOD = Application::instance().maxLODLevel;
-    string repModeStr = (Application::instance().repMode == AVG) ? "AVG" : "QEM";
-    string clusterModeStr = (Application::instance().clusterMode == VOXEL) ? "VOX" : "VOX-NC";
-
-    TriangleMesh* mesh;
-    TriangleMesh* prevMesh;
-    for (int i=maxLOD; i>=minLOD; i--) {
-        mesh = new TriangleMesh();
-
-        if (i < maxLOD) {
-            mesh->nextLOD = prevMesh;
-            prevMesh->previousLOD = mesh; 
-        }
-
-        bool bSuccess = PLYReader::readMesh(filename + "_" + repModeStr + "_" + clusterModeStr + "_" + to_string(i) + ".ply", (*mesh));
-        if (!bSuccess) {
-            while (mesh) {
-                prevMesh = mesh->nextLOD;
-                delete mesh;
-                mesh = prevMesh;
-            }
-            return false;
-        }
-
-        mesh->initializeMesh();
-        prevMesh = mesh;
-    }
-
-    meshes[filename] = mesh;
-    return true;
-}
-
-void TriangleMesh::clearMeshes() {
-    meshes.clear();
-}
-
-TriangleMesh* TriangleMesh::getPreviousLOD() 
-{
-    return previousLOD ? previousLOD : this;
-}
-
-TriangleMesh* TriangleMesh::getNextLOD() 
-{
-    return nextLOD ? nextLOD : this;
 }
