@@ -10,6 +10,7 @@ private:
     glm::mat4 model;
     TriangleMesh *mesh;
 
+
 public:
     Node(TriangleMesh *mesh, glm::mat4 model = glm::mat4(1.0));
     ~Node();
@@ -17,6 +18,9 @@ public:
     glm::mat4 &getModel();
     TriangleMesh *getMesh();
     glm::vec3 getPosition();
+    
+    void usePreviousLod();
+    void useNextLod();
 };
 
 #endif // __NODE_H__

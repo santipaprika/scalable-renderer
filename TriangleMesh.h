@@ -46,6 +46,8 @@ class TriangleMesh {
     static TriangleMesh *Get(string filename);
     static bool writeLODS(string filename);
     static void clearMeshes();
+    TriangleMesh* getPreviousLOD();
+    TriangleMesh* getNextLOD();
 
     vector<int> triangles;
     vector<glm::vec3> vertices;

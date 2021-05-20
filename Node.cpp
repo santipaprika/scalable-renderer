@@ -26,3 +26,13 @@ glm::vec3 Node::getPosition()
     return glm::vec3(model[3][0],model[3][1],model[3][2]);
 }
 
+
+void Node::usePreviousLod() 
+{
+    mesh = mesh->getPreviousLOD();
+}
+
+void Node::useNextLod() 
+{
+    mesh = mesh->getNextLOD();
+}

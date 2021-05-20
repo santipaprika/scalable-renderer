@@ -45,8 +45,8 @@ void Application::init() {
     repMode = AVG;
     clusterMode = VOXEL;
 
-    minLODLevel = 6;
-    maxLODLevel = 9;
+    minLODLevel = 5;
+    maxLODLevel = 8;
 
     currentLOD = minLODLevel;
 
@@ -121,7 +121,11 @@ void Application::render() {
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::Separator(); // ------------
-    ImGui::SliderInt("LOD", &currentLOD, minLODLevel, maxLODLevel);
+    int prevLod = currentLOD;
+    if (ImGui::SliderInt("LOD", &currentLOD, minLODLevel, maxLODLevel)) {
+        if (currentLOD > prevLod) scene.increaseAllNodesLOD();
+        else scene.decreaseAllNodesLOD();
+    }
 
     ImGui::End();
 }

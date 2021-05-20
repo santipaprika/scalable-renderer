@@ -354,3 +354,13 @@ bool TriangleMesh::writeLODS(string filename) {
 void TriangleMesh::clearMeshes() {
     meshes.clear();
 }
+
+TriangleMesh* TriangleMesh::getPreviousLOD() 
+{
+    return previousLOD ? previousLOD : this;
+}
+
+TriangleMesh* TriangleMesh::getNextLOD() 
+{
+    return nextLOD ? nextLOD : this;
+}

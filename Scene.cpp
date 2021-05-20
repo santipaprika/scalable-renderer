@@ -226,6 +226,20 @@ void Scene::setNumInstances(int numInstances_dim1)
     setupGridScene();
 }
 
+void Scene::increaseAllNodesLOD() 
+{
+    for (Node* node : nodes) {
+        node->useNextLod();
+    }
+}
+
+void Scene::decreaseAllNodesLOD() 
+{
+    for (Node* node : nodes) {
+        node->usePreviousLod();
+    }
+}
+
 void Scene::clearNodes()
 {
     for (Node *node : nodes)
