@@ -7,10 +7,11 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, bool root) {
+Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent) {
     this->maxDepth = maxDepth;
     this->minAABB = minAABB;
     this->halfLength = halfLength;
+    this->parent = parent;
 
     for (int i = 0; i < 8; i++) {
         childs[i] = nullptr;
@@ -24,7 +25,7 @@ Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, bool root) {
     addedPosition = glm::vec3(0.0f);
     nVertices = 0;
 
-    if (root)
+    if (!parent)
         counter = 0;
 
     idx = counter;
@@ -90,7 +91,7 @@ Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, un
 
     if (!childs[z * 4 + y * 2 + x]) {
         glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
-        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f);
+        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
     }
 
     return childs[z * 4 + y * 2 + x]->evaluateVertexQEM(vertex, vertexToQuadric, octreeToQuadric, vertexToNormalCluster, vertexIdx);
@@ -124,7 +125,7 @@ Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, un
 
     if (!childs[z * 4 + y * 2 + x]) {
         glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
-        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f);
+        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
     }
 
     return childs[z * 4 + y * 2 + x]->evaluateVertexAVG(vertex, vertexToNormalCluster, vertexIdx);

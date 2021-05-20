@@ -35,8 +35,7 @@ private:
     static int counter;
 
 public:
-    // Octree(vector<glm::vec3> vertices, int depth, glm::vec3 minAABB, glm::vec3 maxAABB, Octree *parent = nullptr);
-    Octree(int maxDepth, glm::vec3 minAABB, float halfLength, bool root=false);
+    Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent = nullptr);
     ~Octree();
 
     glm::vec3 getPosition() const;
@@ -53,6 +52,7 @@ public:
     int nClusteredVertices[8];
     glm::vec3 clusteredRepresentatives[8];
     Octree *childs[8];
+    Octree* parent;
 };
 
 #endif // __OCTREE_H__

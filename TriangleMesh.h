@@ -3,9 +3,9 @@
 
 #include <glm/glm.hpp>
 #include <string>
-#include <vector>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
@@ -37,13 +37,14 @@ class TriangleMesh {
     void computeAABB();
     glm::vec3 getExtents() const;
 
-    TriangleMesh *computeLODs(Octree *octree);
+    TriangleMesh* computeLODs(Octree *octree);
     vector<Plane *> generateQuadrics();
     unordered_map<int, unordered_set<Plane *>> associateVerticesToQuadrics();
     unordered_map<int, unordered_set<int>> associateVerticesToNormalClusters(unordered_map<int, unordered_set<Plane *>> vertexToQuadric);
 
     // get mesh or create (and return) it if path has not been loaded before
-    static TriangleMesh *Get(string path);
+    static TriangleMesh *Get(string filename);
+    static bool writeLODS(string filename);
     static void clearMeshes();
 
     vector<int> triangles;
@@ -57,7 +58,10 @@ class TriangleMesh {
     glm::vec3 minAABB;
     glm::vec3 maxAABB;
 
-    static unordered_map<string, TriangleMesh *> meshes;
+    static unordered_map<string, TriangleMesh*> meshes;
+
+    TriangleMesh* previousLOD;
+    TriangleMesh* nextLOD;
 };
 
 #endif  // _TRIANGLE_MESH_INCLUDE

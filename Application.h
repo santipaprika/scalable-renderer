@@ -51,6 +51,11 @@ public:
     int repMode;                      // Representative computation mode
     int clusterMode;                  // Clustering mode
 
+    int minLODLevel;
+    int maxLODLevel;
+
+    int currentLOD;
+
 private:
 	bool bPlay;                       // Continue?
 	bool keys[256], specialKeys[256]; // Store key states so that 

@@ -27,7 +27,6 @@ void Application::init() {
     glClearColor(1.f, 1.f, 1.f, 1.0f);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    scene.init();
 
     for (unsigned int i = 0; i < 256; i++) {
         keys[i] = false;
@@ -45,6 +44,13 @@ void Application::init() {
     bDrawPoints = false;
     repMode = AVG;
     clusterMode = VOXEL;
+
+    minLODLevel = 6;
+    maxLODLevel = 9;
+
+    currentLOD = minLODLevel;
+
+    scene.init();
 }
 
 bool Application::update(int deltaTime) {
@@ -113,6 +119,9 @@ void Application::render() {
         scene.setupMuseumScene(false);
     }
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator(); // ------------
+    ImGui::SliderInt("LOD", &currentLOD, minLODLevel, maxLODLevel);
 
     ImGui::End();
 }
