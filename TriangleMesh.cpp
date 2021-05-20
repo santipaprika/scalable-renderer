@@ -252,8 +252,9 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
                 facesDict[face] = true;
             }
         }
-        cout << "Simplified model faces: " << LOD->triangles.size() / 3 << endl;
-        cout << "Simplified model vertices: " << LOD->vertices.size() << endl;
+        cout << "Creating LOD " << Application::instance().maxLODLevel-lod << ":" << endl;
+        cout << "\tSimplified model faces: " << LOD->triangles.size() / 3 << endl;
+        cout << "\tSimplified model vertices: " << LOD->vertices.size() << endl << endl;
 
         LOD->initializeMesh();
 
@@ -311,6 +312,9 @@ TriangleMesh *TriangleMesh::Get(string filename) {
     if (meshes.find(filename) != meshes.end())
         return meshes.at(filename);
 
+    if (readLODS(filename))
+        return meshes[filename];
+
     TriangleMesh *mesh = new TriangleMesh();
     bool bSuccess = PLYReader::readMesh(filename, (*mesh));
     if (bSuccess) {
@@ -333,7 +337,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
     for (int i=0; i < Application::instance().currentLOD - Application::instance().minLODLevel; i++)
         mesh = mesh->nextLOD;
 
-    return mesh;
+    return meshes[filename];
 }
 
 bool TriangleMesh::writeLODS(string filename) {
@@ -342,12 +346,49 @@ bool TriangleMesh::writeLODS(string filename) {
     string repModeStr = (Application::instance().repMode == AVG) ? "AVG" : "QEM";
     string clusterModeStr = (Application::instance().clusterMode == VOXEL) ? "VOX" : "VOX-NC";
     TriangleMesh *mesh = meshes[filename];
-    for (int i = 0; i <= maxLOD - minLOD; i++) {
-        string spec_filename = filename + "_" + repModeStr + "_" + clusterModeStr + "_" + to_string(minLOD + i) + ".ply";
-        if (!PLYWriter::writeMesh(spec_filename, *mesh))
+    for (int i = minLOD; i <= maxLOD; i++) {
+        string spec_filename = filename + "_" + repModeStr + "_" + clusterModeStr + "_" + to_string(i) + ".ply";
+        if (!PLYWriter::writeMesh(spec_filename, *mesh)) {
+            cout << "E0: Could not write " << spec_filename << "." << endl;
             return false;
+        }
         mesh = mesh->nextLOD;
     }
+    return true;
+}
+
+bool TriangleMesh::readLODS(string filename) 
+{
+    int minLOD = Application::instance().minLODLevel;
+    int maxLOD = Application::instance().maxLODLevel;
+    string repModeStr = (Application::instance().repMode == AVG) ? "AVG" : "QEM";
+    string clusterModeStr = (Application::instance().clusterMode == VOXEL) ? "VOX" : "VOX-NC";
+
+    TriangleMesh* mesh;
+    TriangleMesh* prevMesh;
+    for (int i=maxLOD; i>=minLOD; i--) {
+        mesh = new TriangleMesh();
+
+        if (i < maxLOD) {
+            mesh->nextLOD = prevMesh;
+            prevMesh->previousLOD = mesh; 
+        }
+
+        bool bSuccess = PLYReader::readMesh(filename + "_" + repModeStr + "_" + clusterModeStr + "_" + to_string(i) + ".ply", (*mesh));
+        if (!bSuccess) {
+            while (mesh) {
+                prevMesh = mesh->nextLOD;
+                delete mesh;
+                mesh = prevMesh;
+            }
+            return false;
+        }
+
+        mesh->initializeMesh();
+        prevMesh = mesh;
+    }
+
+    meshes[filename] = mesh;
     return true;
 }
 

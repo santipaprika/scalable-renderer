@@ -45,6 +45,7 @@ class TriangleMesh {
     // get mesh or create (and return) it if path has not been loaded before
     static TriangleMesh *Get(string filename);
     static bool writeLODS(string filename);
+    static bool readLODS(string filename);
     static void clearMeshes();
     TriangleMesh* getPreviousLOD();
     TriangleMesh* getNextLOD();
