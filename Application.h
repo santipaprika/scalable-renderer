@@ -48,7 +48,8 @@ public:
     // Flags
     bool bDrawPoints;
 	bool bPolygonFill;                // Draw filled faces or wireframe
-    bool useFixedLODs;
+    bool bUseFixedLODs;
+    bool bShowColoredLODs;
 
     int repMode;                      // Representative computation mode
     int clusterMode;                  // Clustering mode

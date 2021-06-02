@@ -50,7 +50,8 @@ void Application::init() {
 
     currentLOD = minLODLevel;
 
-    useFixedLODs = true;
+    bUseFixedLODs = false;
+    bShowColoredLODs = true;
 
     scene.init();
 }
@@ -127,18 +128,24 @@ void Application::render() {
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::Separator();  // ------------
-    int prevLod = currentLOD;
+    
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Checkbox("Show colored LODs", &bShowColoredLODs);
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
+    ImGui::Separator();  // ------------
+
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
-    if (ImGui::Checkbox("Use fixed LODs", &useFixedLODs)) {
-        if (useFixedLODs)
+    if (ImGui::Checkbox("Use fixed LODs", &bUseFixedLODs)) {
+        if (bUseFixedLODs)
             scene.setAllNodesToLOD(currentLOD);
     }
 
-    if (useFixedLODs) {
+    if (bUseFixedLODs) {
+        int prevLod = currentLOD;
         if (ImGui::SliderInt("LOD", &currentLOD, minLODLevel, maxLODLevel)) {
             if (currentLOD > prevLod)
                 scene.increaseAllNodesLOD();

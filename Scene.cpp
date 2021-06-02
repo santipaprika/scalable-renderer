@@ -1,33 +1,31 @@
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <fstream>
 #include <cmath>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 #define GLM_FORCE_RADIANS
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
-#include "Scene.h"
-#include "PLYReader.h"
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "Application.h"
-#include "Utils.h"
 #include "Color.h"
+#include "PLYReader.h"
+#include "Scene.h"
+#include "Utils.h"
 
 #define OUT
 
-Scene::Scene()
-{
+Scene::Scene() {
     cube = NULL;
 }
 
-Scene::~Scene()
-{
+Scene::~Scene() {
     if (cube != NULL)
         delete cube;
     clearNodes();
 }
 
-void Scene::init()
-{
+void Scene::init() {
     initShaders();
     cube = new TriangleMesh();
     cube->buildCube();
@@ -45,17 +43,14 @@ void Scene::init()
     bPolygonFill = true;
 }
 
-void Scene::setupGridScene()
-{
+void Scene::setupGridScene() {
     clearNodes();
 
     float x_step = cube->getExtents().r * 5 / 4;
     float y_step = cube->getExtents().g * 5 / 4;
 
-    for (float i = x_step / 2 * (-meshInstances_dim1 + 1); i <= (meshInstances_dim1 + x_step) / 2; i += x_step)
-    {
-        for (float j = y_step / 2 * (-meshInstances_dim1 + 1); j <= (meshInstances_dim1 + y_step) / 2; j += y_step)
-        {
+    for (float i = x_step / 2 * (-meshInstances_dim1 + 1); i <= (meshInstances_dim1 + x_step) / 2; i += x_step) {
+        for (float j = y_step / 2 * (-meshInstances_dim1 + 1); j <= (meshInstances_dim1 + y_step) / 2; j += y_step) {
             glm::mat4 model(1.0);
             model = glm::translate(model, glm::vec3(i, 0, j));
             nodes.push_back(new Node(cube, model));
@@ -63,8 +58,7 @@ void Scene::setupGridScene()
     }
 }
 
-void Scene::setupMuseumScene(bool initCamera)
-{
+void Scene::setupMuseumScene(bool initCamera) {
     clearNodes();
 
     std::ifstream tilemap("../tilemap.tmx");
@@ -83,11 +77,9 @@ void Scene::setupMuseumScene(bool initCamera)
     tilemap.close();
 
     int y = 0;
-    for (float i = gridStep / 2 * (-gridSize.y + 1); i <= (gridSize.y * gridStep) / 2; i += gridStep)
-    {
+    for (float i = gridStep / 2 * (-gridSize.y + 1); i <= (gridSize.y * gridStep) / 2; i += gridStep) {
         int x = -1;
-        for (float j = gridStep / 2 * (-gridSize.x + 1); j <= (gridSize.x * gridStep) / 2; j += gridStep)
-        {
+        for (float j = gridStep / 2 * (-gridSize.x + 1); j <= (gridSize.x * gridStep) / 2; j += gridStep) {
             x++;
 
             if (grid[y][x] == Tile::NOTHING)
@@ -103,20 +95,16 @@ void Scene::setupMuseumScene(bool initCamera)
                 camera.init(glm::vec3(j, 1, i), 0, 0);
 
             // check for walls
-            for (glm::vec2 dir : surroundingDirs)
-            {
-                if (grid[y + (int)dir.y][x + (int)dir.x] == Tile::NOTHING)
-                {
+            for (glm::vec2 dir : surroundingDirs) {
+                if (grid[y + (int)dir.y][x + (int)dir.x] == Tile::NOTHING) {
                     addNode(cube, glm::vec3(j + gridStep / 2.0f * dir.x, gridStep * 1, i + gridStep / 2.0f * dir.y),
-                                         glm::vec3(1.0 - abs(dir.x) * 0.99, 3.0, 1.0 - abs(dir.y) * 0.99));
+                            glm::vec3(1.0 - abs(dir.x) * 0.99, 3.0, 1.0 - abs(dir.y) * 0.99));
                 }
             }
 
-
             // model
             TriangleMesh *mesh;
-            if (grid[y][x] > Tile::ORIGIN)
-            {
+            if (grid[y][x] > Tile::ORIGIN) {
                 if (grid[y][x] == Tile::CUBE)
                     mesh = cube;
                 else
@@ -131,41 +119,37 @@ void Scene::setupMuseumScene(bool initCamera)
     Utils::deletePointerMatrix(grid, gridSize.x, gridSize.y);
 }
 
-
-void Scene::update(float deltaTime)
-{
+void Scene::update(float deltaTime) {
     currentTime += deltaTime;
-    
-    if (!Application::instance().useFixedLODs)
+
+    if (!Application::instance().bUseFixedLODs)
         initializeValueHeap();
 
     updateKeyPressedEvents(deltaTime);
 }
 
-void Scene::render()
-{
-    for (Node *node : nodes)
-    {
+void Scene::render() {
+    for (Node *node : nodes) {
         basicProgram.use();
         basicProgram.setUniformMatrix4f("projection", camera.getProjectionMatrix());
         basicProgram.setUniformMatrix4f("view", camera.getInvModelViewMatrix());
         basicProgram.setUniformMatrix4f("model", node->getModel());
 
         basicProgram.setUniform1i("bLighting", bPolygonFill ? 1 : 0);
-        if (bPolygonFill)
-        {
+        if (bPolygonFill) {
             glm::vec3 color(0.9f, 0.9f, 0.9f);
-            if (node->getMesh()->LODidx == Application::instance().minLODLevel) color = Color::red(); 
-            if (node->getMesh()->LODidx == Application::instance().minLODLevel+1) color = Color::redyellow(); 
-            if (node->getMesh()->LODidx == Application::instance().minLODLevel+2) color = Color::yellow(); 
-            if (node->getMesh()->LODidx == Application::instance().minLODLevel+3) color = Color::yellowgreen(); 
-            if (node->getMesh()->LODidx >= Application::instance().minLODLevel+4) color = Color::green(); 
+
+            if (Application::instance().bShowColoredLODs) {
+                if (node->getMesh()->LODidx == Application::instance().minLODLevel) color = Color::red();
+                if (node->getMesh()->LODidx == Application::instance().minLODLevel + 1) color = Color::redyellow();
+                if (node->getMesh()->LODidx == Application::instance().minLODLevel + 2) color = Color::yellow();
+                if (node->getMesh()->LODidx == Application::instance().minLODLevel + 3) color = Color::yellowgreen();
+                if (node->getMesh()->LODidx >= Application::instance().minLODLevel + 4) color = Color::green();
+            }
 
             basicProgram.setUniform4f("color", color.x, color.y, color.z, 1.0f);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-        else
-        {
+        } else {
             basicProgram.setUniform4f("color", 1.0f, 1.0f, 1.0f, 1.0f);
             glEnable(GL_POLYGON_OFFSET_FILL);
             glPolygonOffset(0.5f, 1.0f);
@@ -179,12 +163,10 @@ void Scene::render()
     }
 }
 
-void Scene::updateKeyPressedEvents(float deltaTime)
-{
+void Scene::updateKeyPressedEvents(float deltaTime) {
     camera.sprint = Application::instance().getKey(' ');
 
-    enum
-    {
+    enum {
         LEFT_KEY = 'a',
         RIGHT_KEY = 'd',
         FRONT_KEY = 'w',
@@ -192,8 +174,7 @@ void Scene::updateKeyPressedEvents(float deltaTime)
         UP_KEY = 'e',
         DOWN_KEY = 'q'
     };
-    enum
-    {
+    enum {
         LEFT,
         RIGHT,
         FRONT,
@@ -224,39 +205,33 @@ void Scene::updateKeyPressedEvents(float deltaTime)
     camera.move(move_direction * deltaTime);
 }
 
-Camera &Scene::getCamera()
-{
+Camera &Scene::getCamera() {
     return camera;
 }
 
-void Scene::switchPolygonMode()
-{
+void Scene::switchPolygonMode() {
     bPolygonFill = !bPolygonFill;
 }
 
-void Scene::setNumInstances(int numInstances_dim1)
-{
+void Scene::setNumInstances(int numInstances_dim1) {
     this->meshInstances_dim1 = numInstances_dim1;
     setupGridScene();
 }
 
-void Scene::increaseAllNodesLOD() 
-{
-    for (Node* node : nodes) {
+void Scene::increaseAllNodesLOD() {
+    for (Node *node : nodes) {
         node->useNextLod();
     }
 }
 
-void Scene::decreaseAllNodesLOD() 
-{
-    for (Node* node : nodes) {
+void Scene::decreaseAllNodesLOD() {
+    for (Node *node : nodes) {
         node->usePreviousLod();
     }
 }
 
-void Scene::setAllNodesToLOD(int LOD) 
-{
-    for (Node* node : nodes) {
+void Scene::setAllNodesToLOD(int LOD) {
+    for (Node *node : nodes) {
         if (!node->getMesh()->hasLODs())
             continue;
 
@@ -268,16 +243,14 @@ void Scene::setAllNodesToLOD(int LOD)
     }
 }
 
-void Scene::clearNodes()
-{
+void Scene::clearNodes() {
     for (Node *node : nodes)
         delete node;
 
     nodes.clear();
 }
 
-void Scene::addNode(TriangleMesh *mesh, glm::vec3 translation, glm::vec3 scale)
-{
+void Scene::addNode(TriangleMesh *mesh, glm::vec3 translation, glm::vec3 scale) {
     float scaleFactor = gridStep / Utils::max3(mesh->getExtents());
 
     glm::mat4 model(1.0f);
@@ -287,20 +260,17 @@ void Scene::addNode(TriangleMesh *mesh, glm::vec3 translation, glm::vec3 scale)
     nodes.push_back(new Node(mesh, model));
 }
 
-void Scene::initShaders()
-{
+void Scene::initShaders() {
     Shader vShader, fShader;
 
     vShader.initFromFile(VERTEX_SHADER, "shaders/basic.vert");
-    if (!vShader.isCompiled())
-    {
+    if (!vShader.isCompiled()) {
         cout << "Vertex Shader Error" << endl;
         cout << "" << vShader.log() << endl
              << endl;
     }
     fShader.initFromFile(FRAGMENT_SHADER, "shaders/basic.frag");
-    if (!fShader.isCompiled())
-    {
+    if (!fShader.isCompiled()) {
         cout << "Fragment Shader Error" << endl;
         cout << "" << fShader.log() << endl
              << endl;
@@ -309,8 +279,7 @@ void Scene::initShaders()
     basicProgram.addShader(vShader);
     basicProgram.addShader(fShader);
     basicProgram.link();
-    if (!basicProgram.isLinked())
-    {
+    if (!basicProgram.isLinked()) {
         cout << "Shader Linking Error" << endl;
         cout << "" << basicProgram.log() << endl
              << endl;
@@ -320,30 +289,29 @@ void Scene::initShaders()
     fShader.free();
 }
 
-void Scene::initializeValueHeap() 
-{
+void Scene::initializeValueHeap() {
     totalCost = 0;
     glm::vec3 viewpoint = camera.getPosition();
-    for (Node* node : nodes) {
+    for (Node *node : nodes) {
         if (!node->getMesh()->hasLODs())
             continue;
-        
+
         node->useLowestLod();
         node->computeBenefit(viewpoint);
         nodesValueHeap.push(node);
     }
 
     while (!nodesValueHeap.empty()) {
-        Node* bestNode = nodesValueHeap.top(); 
+        Node *bestNode = nodesValueHeap.top();
         if (bestNode->getMesh()->getCost() + totalCost < Application::instance().TPS / 60.f) {
-            totalCost += bestNode->getMesh()->getCost(); 
+            totalCost += bestNode->getMesh()->getCost();
             bestNode->useNextLod();
             nodesValueHeap.pop();
-            
+
             // Add new level to heap only if it exists
             if (bestNode->getMesh()->getCost() == 0)
                 continue;
-            
+
             bestNode->computeBenefit(viewpoint);
             nodesValueHeap.push(bestNode);
         } else
@@ -351,7 +319,5 @@ void Scene::initializeValueHeap()
     }
 }
 
-void Scene::updateValueHeap() 
-{
-    
+void Scene::updateValueHeap() {
 }
