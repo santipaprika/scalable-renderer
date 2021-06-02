@@ -37,7 +37,7 @@ file(GLOB ImGUI_SRC
 )
 
 add_executable(${appName} Utils.h Utils.cpp PLYReader.h PLYReader.cpp PLYWriter.h PLYWriter.cpp Plane.h Plane.cpp Octree.h Octree.cpp 
-TriangleMesh.h TriangleMesh.cpp Camera.h Camera.cpp Node.h Node.cpp Scene.h Scene.cpp Shader.h Shader.cpp 
+TriangleMesh.h TriangleMesh.cpp Camera.h Camera.cpp Node.h Node.cpp Scene.h Scene.cpp Shader.h Shader.cpp Color.h
 ShaderProgram.h ShaderProgram.cpp Application.h Application.cpp main.cpp ${ImGUI_SRC})
                 
 #ImGUI/imgui_demo.cpp ImGUI/imgui_draw.cpp ImGUI/imgui_demo.cpp ImGUI/imgui_impl_glut.cpp ImGUI/imgui_impl_opengl3.cpp ImGUI/imgui_tables.cpp
