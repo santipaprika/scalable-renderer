@@ -55,6 +55,7 @@ public:
     int maxLODLevel;
 
     int currentLOD;
+    int TPS;
 
 private:
 	bool bPlay;                       // Continue?

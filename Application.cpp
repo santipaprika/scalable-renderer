@@ -40,6 +40,8 @@ void Application::init() {
     timeCounter = 0;
     framerate = 0;
 
+    TPS = 10000000;
+
     cursorInGameMode = true;
     bDrawPoints = false;
     repMode = AVG;
@@ -126,6 +128,14 @@ void Application::render() {
         if (currentLOD > prevLod) scene.increaseAllNodesLOD();
         else scene.decreaseAllNodesLOD();
     }
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator(); // ------------
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::SliderInt("Triangles per Second", &TPS, 1000000, 50000000);
 
     ImGui::End();
 }
