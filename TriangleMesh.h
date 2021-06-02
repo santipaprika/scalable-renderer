@@ -47,13 +47,18 @@ class TriangleMesh {
     static bool writeLODS(string filename);
     static bool readLODS(string filename);
     static void clearMeshes();
+    bool hasLODs() const;
     TriangleMesh* getPreviousLOD();
     TriangleMesh* getNextLOD();
     void fillOctree(Octree* octree, vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
     TriangleMesh* fillLODs(vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
 
+    float getCost() const;
+    
     vector<int> triangles;
     vector<glm::vec3> vertices;
+
+    int LODidx;
 
    private:
     GLuint vao;
@@ -67,6 +72,8 @@ class TriangleMesh {
 
     TriangleMesh* previousLOD;
     TriangleMesh* nextLOD;
+
+    float cost;
 };
 
 #endif  // _TRIANGLE_MESH_INCLUDE

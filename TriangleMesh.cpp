@@ -12,6 +12,7 @@ using namespace std;
 TriangleMesh::TriangleMesh() {
     previousLOD = nullptr;
     nextLOD = nullptr;
+    LODidx = -1;
 }
 
 void TriangleMesh::addVertex(const glm::vec3 &position) {
@@ -26,6 +27,7 @@ void TriangleMesh::addTriangle(int v0, int v1, int v2) {
 
 void TriangleMesh::initializeMesh() {
     computeAABB();
+    cost = nextLOD ? nextLOD->triangles.size()/3 - triangles.size()/3 : -1;
     sendToOpenGL(Application::instance().scene.basicProgram);
 }
 
@@ -247,6 +249,7 @@ bool TriangleMesh::readLODS(string filename) {
     TriangleMesh *prevMesh;
     for (int i = maxLOD; i >= minLOD; i--) {
         mesh = new TriangleMesh();
+        mesh->LODidx = i - minLOD;
 
         if (i < maxLOD) {
             mesh->nextLOD = prevMesh;
@@ -274,6 +277,11 @@ bool TriangleMesh::readLODS(string filename) {
 
 void TriangleMesh::clearMeshes() {
     meshes.clear();
+}
+
+bool TriangleMesh::hasLODs() const
+{
+    return nextLOD || previousLOD;
 }
 
 TriangleMesh *TriangleMesh::getPreviousLOD() {
@@ -318,6 +326,7 @@ TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_m
     int diffLODS = max(1, Application::instance().maxLODLevel - Application::instance().minLODLevel);
     for (int lod = 0; lod <= diffLODS; lod++) {
         LOD = new TriangleMesh();
+        LOD->LODidx = lod;
 
         if (lod != 0) {
             for (int i = 0; i < vertices.size(); i++)
@@ -421,4 +430,9 @@ TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_m
     }
 
     return LOD;
+}
+
+float TriangleMesh::getCost() const
+{
+    return cost;
 }

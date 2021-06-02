@@ -6,6 +6,7 @@
 #include "ShaderProgram.h"
 #include "TriangleMesh.h"
 #include "Node.h"
+#include <queue>
 
 
 enum Tile {NOTHING, FLOOR, ORIGIN, CUBE, BUNNY, DRAGON, FROG, HAPPY, HORSE, LUCY, MAXPLANCK, MOAI, SPHERE, TETRAHEDRON, TORUS};
@@ -43,6 +44,8 @@ public:
 private:
     void initShaders();
     void computeModelViewMatrix();
+    void initializeValueHeap();
+    void updateValueHeap();
 
 private:
     Camera camera;
@@ -55,6 +58,9 @@ private:
     float gridStep;
 
     std::vector<Node *> nodes;
+    std::priority_queue<Node *, vector<Node*>, NodePtrLess> nodesValueHeap;
+
+    float totalCost;
 };
 
 #endif // _SCENE_INCLUDE

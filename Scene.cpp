@@ -10,6 +10,7 @@
 #include "PLYReader.h"
 #include "Application.h"
 #include "Utils.h"
+#include "Color.h"
 
 #define OUT
 
@@ -32,11 +33,14 @@ void Scene::init()
     cube->buildCube();
     cube->sendToOpenGL(basicProgram);
     currentTime = 0.0f;
+    totalCost = 0;
 
     camera.init(glm::vec3(0, 0, -2));
     meshInstances_dim1 = 2;
     gridStep = 1.5;
     setupMuseumScene();
+
+    updateValueHeap();
 
     bPolygonFill = true;
 }
@@ -131,6 +135,7 @@ void Scene::setupMuseumScene(bool initCamera)
 void Scene::update(float deltaTime)
 {
     currentTime += deltaTime;
+    initializeValueHeap();
 
     updateKeyPressedEvents(deltaTime);
 }
@@ -147,7 +152,14 @@ void Scene::render()
         basicProgram.setUniform1i("bLighting", bPolygonFill ? 1 : 0);
         if (bPolygonFill)
         {
-            basicProgram.setUniform4f("color", 0.9f, 0.9f, 0.95f, 1.0f);
+            glm::vec3 color(0.9f, 0.9f, 0.9f);
+            if (node->getMesh()->LODidx == 0) color = Color::red(); 
+            if (node->getMesh()->LODidx == 1) color = Color::redyellow(); 
+            if (node->getMesh()->LODidx == 2) color = Color::yellow(); 
+            if (node->getMesh()->LODidx == 3) color = Color::yellowgreen(); 
+            if (node->getMesh()->LODidx >= 4) color = Color::green(); 
+
+            basicProgram.setUniform4f("color", color.x, color.y, color.z, 1.0f);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
         else
@@ -290,4 +302,44 @@ void Scene::initShaders()
     basicProgram.bindFragmentOutput("outColor");
     vShader.free();
     fShader.free();
+}
+
+void Scene::initializeValueHeap() 
+{
+    totalCost = 0;
+    glm::vec3 viewpoint = camera.getPosition();
+    for (Node* node : nodes) {
+        if (!node->getMesh()->hasLODs())
+            continue;
+        
+        node->useLowestLod();
+        node->computeBenefit(viewpoint);
+        nodesValueHeap.push(node);
+    }
+
+    while (!nodesValueHeap.empty()) {
+        Node* bestNode = nodesValueHeap.top(); 
+        if (bestNode->getMesh()->getNextLOD()->getCost() + totalCost < Application::instance().TPS / 60.f) {
+            bestNode->useNextLod();
+            nodesValueHeap.pop();
+            totalCost += bestNode->getMesh()->getCost(); 
+            
+            // Add new level to heap only if it exists
+            if (bestNode->getMesh()->getCost() == 0)
+                continue;
+            
+            bestNode->computeBenefit(viewpoint);
+            nodesValueHeap.push(bestNode);
+        } else
+            nodesValueHeap.pop();
+    }
+
+    // clear
+    while (!nodesValueHeap.empty())
+        nodesValueHeap.pop();
+}
+
+void Scene::updateValueHeap() 
+{
+    
 }
