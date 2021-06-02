@@ -135,7 +135,9 @@ void Scene::setupMuseumScene(bool initCamera)
 void Scene::update(float deltaTime)
 {
     currentTime += deltaTime;
-    initializeValueHeap();
+    
+    if (!Application::instance().useFixedLODs)
+        initializeValueHeap();
 
     updateKeyPressedEvents(deltaTime);
 }
@@ -153,11 +155,11 @@ void Scene::render()
         if (bPolygonFill)
         {
             glm::vec3 color(0.9f, 0.9f, 0.9f);
-            if (node->getMesh()->LODidx == 0) color = Color::red(); 
-            if (node->getMesh()->LODidx == 1) color = Color::redyellow(); 
-            if (node->getMesh()->LODidx == 2) color = Color::yellow(); 
-            if (node->getMesh()->LODidx == 3) color = Color::yellowgreen(); 
-            if (node->getMesh()->LODidx >= 4) color = Color::green(); 
+            if (node->getMesh()->LODidx == Application::instance().minLODLevel) color = Color::red(); 
+            if (node->getMesh()->LODidx == Application::instance().minLODLevel+1) color = Color::redyellow(); 
+            if (node->getMesh()->LODidx == Application::instance().minLODLevel+2) color = Color::yellow(); 
+            if (node->getMesh()->LODidx == Application::instance().minLODLevel+3) color = Color::yellowgreen(); 
+            if (node->getMesh()->LODidx >= Application::instance().minLODLevel+4) color = Color::green(); 
 
             basicProgram.setUniform4f("color", color.x, color.y, color.z, 1.0f);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -249,6 +251,20 @@ void Scene::decreaseAllNodesLOD()
 {
     for (Node* node : nodes) {
         node->usePreviousLod();
+    }
+}
+
+void Scene::setAllNodesToLOD(int LOD) 
+{
+    for (Node* node : nodes) {
+        if (!node->getMesh()->hasLODs())
+            continue;
+
+        while (node->getMesh()->LODidx > LOD)
+            node->usePreviousLod();
+
+        while (node->getMesh()->LODidx < LOD)
+            node->useNextLod();
     }
 }
 

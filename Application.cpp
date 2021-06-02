@@ -52,6 +52,8 @@ void Application::init() {
 
     currentLOD = minLODLevel;
 
+    useFixedLODs = true;
+
     scene.init();
 }
 
@@ -125,8 +127,10 @@ void Application::render() {
     ImGui::Separator(); // ------------
     int prevLod = currentLOD;
     if (ImGui::SliderInt("LOD", &currentLOD, minLODLevel, maxLODLevel)) {
-        if (currentLOD > prevLod) scene.increaseAllNodesLOD();
-        else scene.decreaseAllNodesLOD();
+        if (useFixedLODs) {
+            if (currentLOD > prevLod) scene.increaseAllNodesLOD();
+            else scene.decreaseAllNodesLOD();
+        }
     }
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
@@ -136,6 +140,17 @@ void Application::render() {
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::SliderInt("Triangles per Second", &TPS, 1000000, 50000000);
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator(); // ------------
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    if (ImGui::Checkbox("Use fixed LODs", &useFixedLODs)) {
+        if (useFixedLODs)
+            scene.setAllNodesToLOD(currentLOD);
+    }
 
     ImGui::End();
 }

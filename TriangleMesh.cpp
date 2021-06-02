@@ -249,7 +249,7 @@ bool TriangleMesh::readLODS(string filename) {
     TriangleMesh *prevMesh;
     for (int i = maxLOD; i >= minLOD; i--) {
         mesh = new TriangleMesh();
-        mesh->LODidx = i - minLOD;
+        mesh->LODidx = i;
 
         if (i < maxLOD) {
             mesh->nextLOD = prevMesh;
@@ -326,7 +326,7 @@ TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_m
     int diffLODS = max(1, Application::instance().maxLODLevel - Application::instance().minLODLevel);
     for (int lod = 0; lod <= diffLODS; lod++) {
         LOD = new TriangleMesh();
-        LOD->LODidx = lod;
+        LOD->LODidx = Application::instance().maxLODLevel - lod;
 
         if (lod != 0) {
             for (int i = 0; i < vertices.size(); i++)
