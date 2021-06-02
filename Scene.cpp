@@ -335,10 +335,10 @@ void Scene::initializeValueHeap()
 
     while (!nodesValueHeap.empty()) {
         Node* bestNode = nodesValueHeap.top(); 
-        if (bestNode->getMesh()->getNextLOD()->getCost() + totalCost < Application::instance().TPS / 60.f) {
+        if (bestNode->getMesh()->getCost() + totalCost < Application::instance().TPS / 60.f) {
+            totalCost += bestNode->getMesh()->getCost(); 
             bestNode->useNextLod();
             nodesValueHeap.pop();
-            totalCost += bestNode->getMesh()->getCost(); 
             
             // Add new level to heap only if it exists
             if (bestNode->getMesh()->getCost() == 0)
@@ -349,10 +349,6 @@ void Scene::initializeValueHeap()
         } else
             nodesValueHeap.pop();
     }
-
-    // clear
-    while (!nodesValueHeap.empty())
-        nodesValueHeap.pop();
 }
 
 void Scene::updateValueHeap() 

@@ -10,7 +10,6 @@ class Node {
     glm::mat4 model;
     TriangleMesh *mesh;
     float benefit;
-    float value;
 
    public:
     Node(TriangleMesh *mesh, glm::mat4 model = glm::mat4(1.0));

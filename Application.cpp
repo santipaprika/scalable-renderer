@@ -9,11 +9,9 @@
 #include "ImGUI/imgui.h"
 
 // ImGui helper
-static void HelpMarker(const char* desc)
-{
+static void HelpMarker(const char* desc) {
     ImGui::TextDisabled("(!)");
-    if (ImGui::IsItemHovered())
-    {
+    if (ImGui::IsItemHovered()) {
         ImGui::BeginTooltip();
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
         ImGui::TextUnformatted(desc);
@@ -82,7 +80,7 @@ void Application::render() {
     ImGui::Text("Computed FR: %.1f FPS", framerate);
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
-    ImGui::Separator(); // ------------
+    ImGui::Separator();  // ------------
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
     ImGui::Checkbox("Render points", &bDrawPoints);
@@ -90,66 +88,65 @@ void Application::render() {
         scene.switchPolygonMode();
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
-    ImGui::Separator(); // ------------
+    ImGui::Separator();  // ------------
 
     // Representative strategy
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
-    
+
     ImGui::Text("Representative computation strategy:");
-    ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
-        
+    ImGui::SameLine();
+    HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
+
     const char* repItems[] = {"[AVG] Average", "[QEM] Quadric Error Metrics"};
     if (ImGui::Combo("##repmode", &repMode, repItems, IM_ARRAYSIZE(repItems))) {
         TriangleMesh::clearMeshes();
-        cout << "\n\n\n---- Switching to representative computation strategy: " << repItems[repMode] << " ---- \n" << endl;
+        cout << "\n\n\n---- Switching to representative computation strategy: " << repItems[repMode] << " ---- \n"
+             << endl;
         scene.setupMuseumScene(false);
     }
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
-    ImGui::Separator(); // ------------
+    ImGui::Separator();  // ------------
 
     // Clustering strategy
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::Text("Vertex clustering strategy:");
-    ImGui::SameLine(); HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
-    
+    ImGui::SameLine();
+    HelpMarker("CHANGING THIS MAY INTRODUCE A SIGNIFICANT WAIT TIME.\nSelecting a new strategy will reload the whole scene applying it.");
+
     const char* clusterItems[] = {"[VOX] Voxel clustering", "[VOX + NC] Voxel + Normal clustering"};
-    
+
     if (ImGui::Combo("##clustermode", &clusterMode, clusterItems, IM_ARRAYSIZE(clusterItems))) {
         TriangleMesh::clearMeshes();
-        cout << "\n\n\n---- Switching to vertex cluster strategy: " << clusterItems[clusterMode] << " ---- \n" << endl;
+        cout << "\n\n\n---- Switching to vertex cluster strategy: " << clusterItems[clusterMode] << " ---- \n"
+             << endl;
         scene.setupMuseumScene(false);
     }
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
-    ImGui::Separator(); // ------------
+    ImGui::Separator();  // ------------
     int prevLod = currentLOD;
-    if (ImGui::SliderInt("LOD", &currentLOD, minLODLevel, maxLODLevel)) {
-        if (useFixedLODs) {
-            if (currentLOD > prevLod) scene.increaseAllNodesLOD();
-            else scene.decreaseAllNodesLOD();
-        }
-    }
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
-
-    ImGui::Separator(); // ------------
-
-    ImGui::Dummy(ImVec2(0.0f, 2.0f));
-
-    ImGui::SliderInt("Triangles per Second", &TPS, 1000000, 50000000);
-
-    ImGui::Dummy(ImVec2(0.0f, 2.0f));
-
-    ImGui::Separator(); // ------------
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     if (ImGui::Checkbox("Use fixed LODs", &useFixedLODs)) {
         if (useFixedLODs)
             scene.setAllNodesToLOD(currentLOD);
+    }
+
+    if (useFixedLODs) {
+        if (ImGui::SliderInt("LOD", &currentLOD, minLODLevel, maxLODLevel)) {
+            if (currentLOD > prevLod)
+                scene.increaseAllNodesLOD();
+            else
+                scene.decreaseAllNodesLOD();
+        }
+    } else {
+        ImGui::SliderInt("Triangles per Second", &TPS, 1000000, 500000000);
     }
 
     ImGui::End();
