@@ -19,11 +19,12 @@ private:
     glm::vec3 minAABB;
     float halfLength;
 
-    glm::vec3 addedPosition;
-    glm::vec3 position;
     int maxDepth;
     int nVertices;
     int idx;
+    
+    glm::vec3 addedPosition;
+    glm::vec3 position;
 
     // QEM
     Eigen::Matrix4d Q;
