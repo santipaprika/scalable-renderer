@@ -12,6 +12,7 @@
 #include "PLYReader.h"
 #include "Scene.h"
 #include "Utils.h"
+#include "VisibilityComputer.h"
 
 #define OUT
 
@@ -37,6 +38,7 @@ void Scene::init() {
     meshInstances_dim1 = 2;
     gridStep = 1.5;
     setupMuseumScene();
+    VisibilityComputer::computeAndSaveVisibility("../tilemap.tmx");
 
     updateValueHeap();
 
