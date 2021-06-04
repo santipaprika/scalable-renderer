@@ -71,7 +71,7 @@ void Scene::setupMuseumScene(bool initCamera) {
 
     // initialize grid
     int **grid;
-    Utils::initializePointerMatrix(grid, gridSize.x, gridSize.y);
+    Utils::initializePointerMatrix<int>(grid, gridSize.x, gridSize.y);
 
     // fill grid
     Utils::parseGrid(tilemap, OUT grid, gridSize);

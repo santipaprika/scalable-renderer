@@ -60,13 +60,9 @@ void Utils::parseGrid(std::ifstream &tilemap, int **&grid, glm::vec2 gridSize)
     }
 }
 
-void Utils::initializePointerMatrix(int** &pointerArray, int sizeX, int sizeY) 
-{
-    pointerArray = new int *[sizeY];
+// template<typename T>
+// void Utils::initializePointerMatrix(T** &pointerArray, int sizeX, int sizeY) 
 
-    for (int i = 0; i < sizeY; i++)
-        pointerArray[i] = new int[sizeX];
-}
 
 void Utils::deletePointerMatrix(int** &pointerArray, int sizeX, int sizeY) 
 {
