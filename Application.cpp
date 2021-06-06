@@ -21,6 +21,8 @@ static void HelpMarker(const char* desc) {
 }
 
 void Application::init() {
+    srand(time(NULL));
+
     bPlay = true;
     glClearColor(1.f, 1.f, 1.f, 1.0f);
     glEnable(GL_CULL_FACE);
@@ -52,6 +54,7 @@ void Application::init() {
 
     bUseFixedLODs = false;
     bShowColoredLODs = true;
+    bUpdateVisibility = true;
 
     scene.init();
 }
@@ -155,6 +158,15 @@ void Application::render() {
     } else {
         ImGui::SliderInt("Triangles per Second", &TPS, 1000000, 500000000);
     }
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator();  // ------------
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    if (ImGui::Button(bUpdateVisibility ? "Freeze visibility" : "Unfreeze visibility"))
+        bUpdateVisibility = !bUpdateVisibility;
 
     ImGui::End();
 }

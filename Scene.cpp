@@ -38,7 +38,7 @@ void Scene::init() {
     meshInstances_dim1 = 2;
     gridStep = 1.5;
     setupMuseumScene();
-    VisibilityComputer::computeAndSaveVisibility("../tilemap.tmx");
+    initializeVisibility();
 
     updateValueHeap();
 
@@ -67,7 +67,7 @@ void Scene::setupMuseumScene(bool initCamera) {
     string modelsPath[12] = {"bunny.ply", "dragon.ply", "frog.ply", "happy.ply", "horse.ply", "lucy.ply", "maxplanck.ply", "moai.ply", "sphere.ply", "tetrahedron.ply", "torus.ply", "Armadillo.ply"};
     glm::vec2 surroundingDirs[4] = {glm::vec2(-1, 0), glm::vec2(0, -1), glm::vec2(1, 0), glm::vec2(0, 1)};
 
-    glm::vec2 gridSize = Utils::getGridSize(tilemap);
+    gridSize = Utils::getGridSize(tilemap);
 
     // initialize grid
     int **grid;
@@ -112,13 +112,13 @@ void Scene::setupMuseumScene(bool initCamera) {
                 else
                     mesh = TriangleMesh::Get("../models/" + modelsPath[grid[y][x] - (Tile::CUBE + 1)]);
 
-                addNode(mesh, glm::vec3(j, 0, i));
+                addNode(mesh, glm::vec3(j, 0, i), glm::vec3(1,1,1), glm::vec2(y,x));
             }
         }
         y++;
     }
 
-    Utils::deletePointerMatrix(grid, gridSize.x, gridSize.y);
+    Utils::deletePointerMatrix<int>(grid, gridSize.x, gridSize.y);
 }
 
 void Scene::update(float deltaTime) {
@@ -131,7 +131,15 @@ void Scene::update(float deltaTime) {
 }
 
 void Scene::render() {
+
+    glm::vec2 camCoords = camera.getGridCoords();
+    std::unordered_set<glm::vec2> visibilitySet = visibilityPerCell[(int)camCoords.x][(int)camCoords.y];
+
     for (Node *node : nodes) {
+        if (node->isStatue())
+            if (visibilitySet.find(node->getCoords()) == visibilitySet.end())
+                continue;
+
         basicProgram.use();
         basicProgram.setUniformMatrix4f("projection", camera.getProjectionMatrix());
         basicProgram.setUniformMatrix4f("view", camera.getInvModelViewMatrix());
@@ -252,14 +260,14 @@ void Scene::clearNodes() {
     nodes.clear();
 }
 
-void Scene::addNode(TriangleMesh *mesh, glm::vec3 translation, glm::vec3 scale) {
+void Scene::addNode(TriangleMesh *mesh, glm::vec3 translation, glm::vec3 scale, glm::vec2 coords) {
     float scaleFactor = gridStep / Utils::max3(mesh->getExtents());
 
     glm::mat4 model(1.0f);
     model = glm::translate(model, translation);
     model = glm::scale(model, glm::vec3(scaleFactor));
     model = glm::scale(model, scale);
-    nodes.push_back(new Node(mesh, model));
+    nodes.push_back(new Node(mesh, model, coords));
 }
 
 void Scene::initShaders() {
@@ -322,4 +330,36 @@ void Scene::initializeValueHeap() {
 }
 
 void Scene::updateValueHeap() {
+}
+
+void Scene::initializeVisibility() {
+    Utils::initializePointerMatrix<std::unordered_set<glm::vec2>>(visibilityPerCell, gridSize.x, gridSize.y);
+    std::ifstream visibilityFile("visibility.vis");
+
+    if (!visibilityFile.is_open()) {
+        VisibilityComputer::computeAndSaveVisibility("../tilemap.tmx");
+        visibilityFile.open("visibility.vis");
+    }
+
+
+    string line;
+    std::cout << "Reading visibility..." << std::endl;
+    int i=0, j=0;
+    while (std::getline(visibilityFile, line)) {
+        std::istringstream iss(line);
+        int x, y;
+
+        while (iss >> x >> y) {
+            visibilityPerCell[j][i].insert(glm::vec2(x,y));
+        }
+
+        j++;
+        if (j==gridSize.x) {
+            i++;
+            j=0;
+        }
+    }
+
+    std::cout << "Done!" << std::endl;
+
 }

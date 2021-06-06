@@ -10,9 +10,11 @@ class Node {
     glm::mat4 model;
     TriangleMesh *mesh;
     float benefit;
+    glm::vec2 gridCoords;
+    bool isStatueNode;
 
    public:
-    Node(TriangleMesh *mesh, glm::mat4 model = glm::mat4(1.0));
+    Node(TriangleMesh *mesh, glm::mat4 model = glm::mat4(1.0), glm::vec2 coords = glm::vec2(-1,-1));
     ~Node();
 
     glm::mat4 &getModel();
@@ -26,6 +28,9 @@ class Node {
     float getBenefit() const;
     void setBenefit(float benefit);
     void computeBenefit(glm::vec3 viewpoint);
+
+    glm::vec2 getCoords();
+    bool isStatue();
 
 };
 

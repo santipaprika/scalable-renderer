@@ -25,11 +25,13 @@ public:
     glm::mat4 &getInvModelViewMatrix();
 
     glm::vec3 getPosition();
+    glm::vec2 getGridCoords();
 
     bool sprint;
 
 private:
     void computeModelViewMatrix();
+    void computeGridCoordinates();
 
 private:
     float angleX, angleY, distance; // Camera parameters
@@ -45,6 +47,7 @@ private:
     float far;
     
     glm::mat4 projection, modelview, modelview_inv; // OpenGL matrices
+    glm::vec2 gridPosition;
 };
 
 #endif // _CAMERA_INCLUDE

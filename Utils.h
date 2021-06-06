@@ -9,13 +9,17 @@ class Utils {
     static void parseGrid(std::ifstream &tilemap, int **&grid, glm::vec2 gridSize);
 
     template <typename T>
-    static void initializePointerMatrix(T **&pointerArray, int sizeX, int sizeY)
-    {
+    static void initializePointerMatrix(T **&pointerArray, int sizeX, int sizeY) {
         pointerArray = new T *[sizeY];
 
         for (int i = 0; i < sizeY; i++)
             pointerArray[i] = new T[sizeX];
     }
 
-    static void deletePointerMatrix(int **&pointerArray, int sizeX, int sizeY);
+    template <typename T>
+    static void deletePointerMatrix(T **&pointerArray, int sizeX, int sizeY) {
+        for (int i = 0; i < sizeY; i++)
+            delete[] pointerArray[i];
+        delete[] pointerArray;
+    }
 };

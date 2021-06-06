@@ -1,10 +1,12 @@
 #include "Node.h"
 #include <iostream>
 
-Node::Node(TriangleMesh* mesh, glm::mat4 model) 
+Node::Node(TriangleMesh* mesh, glm::mat4 model, glm::vec2 coords) 
 {
     this->mesh = mesh;
     this->model = model;
+    gridCoords = coords;
+    if ((coords.x) < 0) isStatueNode = false;
 }
 
 Node::~Node() 
@@ -59,4 +61,14 @@ void Node::computeBenefit(glm::vec3 viewpoint)
     float d = glm::length(ext);
     float D = glm::length(getPosition() - viewpoint); 
     benefit = d / (powf(2, mesh->LODidx) * D);
+}
+
+glm::vec2 Node::getCoords() 
+{
+    return gridCoords;
+}
+
+bool Node::isStatue() 
+{
+    return isStatueNode;
 }

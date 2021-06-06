@@ -6,7 +6,7 @@
 #include "Scene.h"
 
 #define OUT
-#define N_RAYS 10
+#define N_RAYS 100
 #define EPS 0.000001
 
 std::unordered_set<glm::vec2>** VisibilityComputer::visibilityPerCell; 
@@ -28,16 +28,22 @@ void VisibilityComputer::computeAndSaveVisibility(std::string tilemapPath) {
     // explore visibility
     float percent = 0;
     for (int i = 0; i < gridSize.y; i++) {
-        if (i % ((int)gridSize.y/100) == 0) {
+        if (i % (max(1,(int)gridSize.y/100)) == 0) {
             percent = (i*gridSize.x) / (gridSize.x*gridSize.y);
-            std::cout << "[ " << percent*100 << " %]" << std::endl;
+            std::cout << "[ " << percent*100 << " %] Generating visibility per cell" << std::endl;
         }
         for (int j = 0; j < gridSize.x; j++) {
             sampleRaysThroughCell(i, j, gridSize, tilemap);
         }
     }
 
-    writeVisibilityFile();
+    std::cout << "Writing..." << std::endl;
+    if (writeVisibilityFile(gridSize))
+        std::cout << "Done!" << std::endl;
+    else
+        std::cout << "E1: Could not write visibility file!" << std::endl;
+
+    Utils::deletePointerMatrix<std::unordered_set<glm::vec2>>(visibilityPerCell, gridSize.x, gridSize.y);
 }
 
 void VisibilityComputer::sampleRaysThroughCell(int x, int y, glm::vec2 gridSize, int** tilemap) {
@@ -131,22 +137,23 @@ bool VisibilityComputer::getIntersectionParameters(glm::vec2 origin, glm::vec2 d
     return true;
 }
 
-bool VisibilityComputer::writeVisibilityFile() 
+bool VisibilityComputer::writeVisibilityFile(glm::vec2 gridSize) 
 {
     ofstream fout;
     fout.open("visibility.vis");
 	if(!fout.is_open())
 		return false;
     
-    for (int i=0; i<100; i++) {
-        for (int j=0; j<100; j++) {
-            fout << "(";
+    for (int i=0; i<gridSize.x; i++) {
+        for (int j=0; j<gridSize.y; j++) {
             for (glm::vec2 cell : visibilityPerCell[i][j]) {
-                fout << "[" << cell.x << ", " << cell.y << "] ";
+                fout << cell.x << " " << cell.y << " ";
             }
-            fout << ")\n";
+            fout << "\n";
         }
     }
 
     fout.close();
+
+    return true;
 }

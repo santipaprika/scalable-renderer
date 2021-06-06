@@ -50,6 +50,7 @@ public:
 	bool bPolygonFill;                // Draw filled faces or wireframe
     bool bUseFixedLODs;
     bool bShowColoredLODs;
+    bool bUpdateVisibility;
 
     int repMode;                      // Representative computation mode
     int clusterMode;                  // Clustering mode

@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <iostream>
+#include "Application.h"
 
 #define PI 3.14159f
 
@@ -29,6 +30,7 @@ void Camera::init(glm::vec3 position, float initAngleX, float initAngleY)
     rotationSpeed = 2;
 
     computeModelViewMatrix();
+    computeGridCoordinates();
 }
 
 void Camera::resizeCameraViewport(int width, int height)
@@ -63,6 +65,13 @@ void Camera::computeModelViewMatrix()
     modelview_inv = glm::inverse(modelview);
 }
 
+void Camera::computeGridCoordinates() 
+{
+    if (Application::instance().bUpdateVisibility)
+        gridPosition = floor(glm::vec2(position.x,position.z) / Application::instance().scene.gridStep + Application::instance().scene.gridSize/2.f);
+    // std::cout << to_string(gridPosition) << std::endl;
+}
+
 void Camera::move(glm::vec3 delta_direction)
 {
     glm::vec3 moveAmount = (-delta_direction * (sprint ? sprintVelocity : velocity));
@@ -71,6 +80,7 @@ void Camera::move(glm::vec3 delta_direction)
     position = glm::vec3(moveAmountH);
 
     computeModelViewMatrix();
+    computeGridCoordinates();
 }
 
 glm::mat4 &Camera::getProjectionMatrix()
@@ -91,4 +101,9 @@ glm::mat4& Camera::getInvModelViewMatrix()
 glm::vec3 Camera::getPosition() 
 {
     return glm::vec3(modelview[3][0], modelview[3][1], modelview[3][2]);
+}
+
+glm::vec2 Camera::getGridCoords() 
+{
+    return gridPosition;
 }

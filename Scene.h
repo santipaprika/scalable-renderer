@@ -38,15 +38,18 @@ public:
     void setAllNodesToLOD(int LOD);
     void clearNodes();
     
-    void addNode(TriangleMesh* mesh, glm::vec3 translation=glm::vec3(0.0f), glm::vec3 scale=glm::vec3(1.0));
+    void addNode(TriangleMesh* mesh, glm::vec3 translation=glm::vec3(0.0f), glm::vec3 scale=glm::vec3(1.0), glm::vec2 coords = glm::vec2(-1,-1));
 
     ShaderProgram basicProgram;
+    glm::vec2 gridSize;
+    float gridStep;
 
 private:
     void initShaders();
     void computeModelViewMatrix();
     void initializeValueHeap();
     void updateValueHeap();
+    void initializeVisibility();
 
 private:
     Camera camera;
@@ -56,12 +59,13 @@ private:
     bool bPolygonFill;
 
     int meshInstances_dim1;
-    float gridStep;
 
     std::vector<Node *> nodes;
     std::priority_queue<Node *, vector<Node*>, NodePtrLess> nodesValueHeap;
 
     float totalCost;
+
+    std::unordered_set<glm::vec2>** visibilityPerCell; 
 };
 
 #endif // _SCENE_INCLUDE
