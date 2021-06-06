@@ -69,7 +69,6 @@ void Camera::computeGridCoordinates()
 {
     if (Application::instance().bUpdateVisibility)
         gridPosition = floor(glm::vec2(position.x,position.z) / Application::instance().scene.gridStep + Application::instance().scene.gridSize/2.f);
-    // std::cout << to_string(gridPosition) << std::endl;
 }
 
 void Camera::move(glm::vec3 delta_direction)
