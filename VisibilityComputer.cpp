@@ -6,7 +6,7 @@
 #include "Scene.h"
 
 #define OUT
-#define N_RAYS 200
+#define N_RAYS 20
 #define EPS 0.000001
 
 std::unordered_set<glm::vec2>** VisibilityComputer::visibilityPerCell; 
@@ -32,7 +32,7 @@ void VisibilityComputer::computeAndSaveVisibility(std::string tilemapPath) {
             std::cout << "[ " << percent*100 << " %] Generating visibility per cell" << std::endl;
         }
         for (int j = 0; j < gridSize.y; j++) {
-            visibilityPerCell[j][i].insert(glm::vec2(j,i));
+            visibilityPerCell[j][i].insert(glm::vec2(i,j));
             sampleRaysThroughCell(i, j, gridSize, tilemap);
         }
     }
@@ -109,6 +109,7 @@ void VisibilityComputer::sampleRaysThroughCell(int x, int y, glm::vec2 gridSize,
                     visibilityPerCell[x][y].insert(pathCell);
                     visibilityPerCell[(int)pathCell.y][(int)pathCell.x].insert(currentCell);
 
+                    // SUPER COVER BRESENHAM (WIP)
                     // if (addOnX) {
                     //     if (abs(deltaRemX * sin(angle)) > 0.5) addBelow = true; 
                     //     else addBelow = false;
@@ -147,7 +148,7 @@ void VisibilityComputer::sampleRaysThroughCell(int x, int y, glm::vec2 gridSize,
             visiblePath.push_back(currentCell);
 
             if (deltaRemX < deltaRemY) {
-                right ? currentCell.x++ : currentCell.x++;
+                right ? currentCell.x++ : currentCell.x--;
                 deltaRemY -= deltaRemX;
                 deltaRemX = delta.x;
             } else {
