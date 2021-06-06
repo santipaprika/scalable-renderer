@@ -133,11 +133,11 @@ void Scene::update(float deltaTime) {
 void Scene::render() {
 
     glm::vec2 camCoords = camera.getGridCoords();
-    std::unordered_set<glm::vec2> visibilitySet = visibilityPerCell[(int)camCoords.x][(int)camCoords.y];
+    std::unordered_set<glm::vec2> visibilitySet = visibilityPerCell[(int)camCoords.y][(int)camCoords.x];
 
     for (Node *node : nodes) {
         if (node->isStatue())
-            if (visibilitySet.find(node->getCoords()) == visibilitySet.end())
+            if (visibilitySet.find(node->getCoords()) == visibilitySet.end()) 
                 continue;
 
         basicProgram.use();
@@ -302,9 +302,17 @@ void Scene::initShaders() {
 void Scene::initializeValueHeap() {
     totalCost = 0;
     glm::vec3 viewpoint = camera.getPosition();
+
+    glm::vec2 camCoords = camera.getGridCoords();
+    std::unordered_set<glm::vec2> visibilitySet = visibilityPerCell[(int)camCoords.y][(int)camCoords.x];
+
     for (Node *node : nodes) {
         if (!node->getMesh()->hasLODs())
             continue;
+
+        if (node->isStatue())
+            if (visibilitySet.find(node->getCoords()) == visibilitySet.end()) 
+                continue;
 
         node->useLowestLod();
         node->computeBenefit(viewpoint);
@@ -350,7 +358,7 @@ void Scene::initializeVisibility() {
         int x, y;
 
         while (iss >> x >> y) {
-            visibilityPerCell[j][i].insert(glm::vec2(x,y));
+            visibilityPerCell[i][j].insert(glm::vec2(y,x));
         }
 
         j++;

@@ -126,6 +126,8 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     vector<Octree *> vertexOctree;
     // vertexOctree.resize(vertices.size());
 
+    std::cout << "Creating new LODs..." << std::endl;
+    
     unordered_map<int, unordered_set<int>> vertexToNormalCluster;
 
     fillOctree(octree, vertexOctree, vertexToNormalCluster);
