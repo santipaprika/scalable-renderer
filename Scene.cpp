@@ -40,7 +40,8 @@ void Scene::init() {
     setupMuseumScene();
     initializeVisibility();
 
-    updateValueHeap();
+    initializeNodesLODs();
+    updateLODs();
 
     bPolygonFill = true;
 }
@@ -112,7 +113,7 @@ void Scene::setupMuseumScene(bool initCamera) {
                 else
                     mesh = TriangleMesh::Get("../models/" + modelsPath[grid[y][x] - (Tile::CUBE + 1)]);
 
-                addNode(mesh, glm::vec3(j, 0, i), glm::vec3(1,1,1), glm::vec2(y,x));
+                addNode(mesh, glm::vec3(j, 0, i), glm::vec3(1, 1, 1), glm::vec2(y, x));
             }
         }
         y++;
@@ -125,19 +126,18 @@ void Scene::update(float deltaTime) {
     currentTime += deltaTime;
 
     if (!Application::instance().bUseFixedLODs)
-        initializeValueHeap();
+        updateLODs();
 
     updateKeyPressedEvents(deltaTime);
 }
 
 void Scene::render() {
-
     glm::vec2 camCoords = camera.getGridCoords();
     std::unordered_set<glm::vec2> visibilitySet = visibilityPerCell[(int)camCoords.y][(int)camCoords.x];
 
     for (Node *node : nodes) {
-        if (node->isStatue())
-            if (visibilitySet.find(node->getCoords()) == visibilitySet.end()) 
+        if (Application::instance().bUseVisibility && node->isStatue())
+            if (visibilitySet.find(node->getCoords()) == visibilitySet.end())
                 continue;
 
         basicProgram.use();
@@ -299,30 +299,50 @@ void Scene::initShaders() {
     fShader.free();
 }
 
-void Scene::initializeValueHeap() {
+// Time critical rendering work performed here
+void Scene::updateLODs() {
     totalCost = 0;
-    glm::vec3 viewpoint = camera.getPosition();
+    std::priority_queue<Node *, vector<Node*>, NodePtrLess> nodesValueHeap;
 
+    glm::vec3 viewpoint = camera.getPosition();
     glm::vec2 camCoords = camera.getGridCoords();
     std::unordered_set<glm::vec2> visibilitySet = visibilityPerCell[(int)camCoords.y][(int)camCoords.x];
-
+    
+    // select candidate nodes to evaluate for time critical rendering
     for (Node *node : nodes) {
-        if (!node->getMesh()->hasLODs())
+        if (!node->isStatue())
             continue;
 
-        if (node->isStatue())
-            if (visibilitySet.find(node->getCoords()) == visibilitySet.end()) 
+        // do not take into account walls nor hidden nodes to decide LODs.
+        if (Application::instance().bUseVisibility)
+            if (visibilitySet.find(node->getCoords()) == visibilitySet.end())
                 continue;
 
+        // if a node's LOD has been changed recently, keep same LOD without evaluating it.
+        if (Application::instance().bUseHystheresis && node->isBlocked()) {
+            float distNodeToCamera = glm::distance(node->getPosition(), camera.getPosition());
+            int hystheresisMode = Application::instance().hystheresisMode;
+            float hystheresisFactor = Application::instance().hystheresisFactor;
+            bool keepBlocking = (hystheresisMode == ABS_DIST_HYSTHERESIS) ? (abs(distNodeToCamera - node->getBlockedDistance()) < hystheresisFactor) : abs(distNodeToCamera - node->getBlockedDistance()) < node->getBlockedDistance() * hystheresisFactor;
+
+            if (keepBlocking) {
+                totalCost += node->getMesh()->getTotalCost();
+                continue;
+            }
+            node->setBlocked(false);
+        }
+
         node->useLowestLod();
+        totalCost += node->getMesh()->getTotalCost();
         node->computeBenefit(viewpoint);
         nodesValueHeap.push(node);
     }
 
+    // upgrade iterativelly the best node's LODs (with more value) until maximum cost is reached.
     while (!nodesValueHeap.empty()) {
         Node *bestNode = nodesValueHeap.top();
         if (bestNode->getMesh()->getCost() + totalCost < Application::instance().TPS / 60.f) {
-            totalCost += bestNode->getMesh()->getCost();
+            totalCost += bestNode->getMesh()->getCost();  // difference in triangles between current and next LOD
             bestNode->useNextLod();
             nodesValueHeap.pop();
 
@@ -335,9 +355,26 @@ void Scene::initializeValueHeap() {
         } else
             nodesValueHeap.pop();
     }
-}
 
-void Scene::updateValueHeap() {
+    // next step can be ignored if not using hystheresis.
+    if (!Application::instance().bUseHystheresis)
+        return;
+
+    // Check which nodes' LODs have changed w.r.t previous frame
+    for (Node *node : nodes) {
+        // do not take into account walls nor hidden nodes to decide LODs.
+        if (!node->isStatue()) continue;
+
+        if (visibilitySet.find(node->getCoords()) == visibilitySet.end())
+            continue;
+
+        // If it has changed, block and update!
+        if (node->getMesh()->LODidx != nodesLOD[node]) {
+            node->setBlocked(true);
+            node->setBlockedDistance(glm::distance(node->getPosition(), camera.getPosition()));
+            nodesLOD[node] = node->getMesh()->LODidx;
+        }
+    }
 }
 
 void Scene::initializeVisibility() {
@@ -349,25 +386,28 @@ void Scene::initializeVisibility() {
         visibilityFile.open("visibility.vis");
     }
 
-
     string line;
     std::cout << "Reading visibility..." << std::endl;
-    int i=0, j=0;
+    int i = 0, j = 0;
     while (std::getline(visibilityFile, line)) {
         std::istringstream iss(line);
         int x, y;
 
         while (iss >> x >> y) {
-            visibilityPerCell[i][j].insert(glm::vec2(y,x));
+            visibilityPerCell[i][j].insert(glm::vec2(y, x));
         }
 
         j++;
-        if (j==gridSize.x) {
+        if (j == gridSize.x) {
             i++;
-            j=0;
+            j = 0;
         }
     }
 
     std::cout << "Done!" << std::endl;
+}
 
+void Scene::initializeNodesLODs() {
+    for (Node *node : nodes)
+        nodesLOD[node] = 0;
 }

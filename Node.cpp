@@ -6,7 +6,8 @@ Node::Node(TriangleMesh* mesh, glm::mat4 model, glm::vec2 coords)
     this->mesh = mesh;
     this->model = model;
     gridCoords = coords;
-    if ((coords.x) < 0) isStatueNode = false;
+    blockedLOD = false;
+    blockedDistance = 0.f;
 }
 
 Node::~Node() 
@@ -70,5 +71,25 @@ glm::vec2 Node::getCoords()
 
 bool Node::isStatue() 
 {
-    return isStatueNode;
+    return getMesh()->hasLODs();
+}
+
+bool Node::isBlocked() 
+{
+    return blockedLOD;
+}
+
+void Node::setBlocked(bool blocked) 
+{
+    blockedLOD = blocked;
+}
+
+float Node::getBlockedDistance() 
+{
+    return blockedDistance;
+}
+
+void Node::setBlockedDistance(float dist) 
+{
+    blockedDistance = dist;
 }

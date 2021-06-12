@@ -10,6 +10,7 @@
 
 
 enum Tile {NOTHING, FLOOR, ORIGIN, CUBE, BUNNY, DRAGON, FROG, HAPPY, HORSE, LUCY, MAXPLANCK, MOAI, SPHERE, TETRAHEDRON, TORUS};
+enum HystheresisMode {ABS_DIST_HYSTHERESIS, REL_DIST_HYSTHERESIS};
 
 
 // Scene contains all the entities of our game.
@@ -47,9 +48,9 @@ public:
 private:
     void initShaders();
     void computeModelViewMatrix();
-    void initializeValueHeap();
-    void updateValueHeap();
+    void updateLODs();
     void initializeVisibility();
+    void initializeNodesLODs();
 
 private:
     Camera camera;
@@ -61,7 +62,9 @@ private:
     int meshInstances_dim1;
 
     std::vector<Node *> nodes;
-    std::priority_queue<Node *, vector<Node*>, NodePtrLess> nodesValueHeap;
+
+    // data structure used to know previous LODs used in hystheresis computation. 
+    std::unordered_map<Node*, int> nodesLOD;
 
     float totalCost;
 

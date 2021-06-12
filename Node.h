@@ -5,13 +5,16 @@
 
 #include "TriangleMesh.h"
 
+// Class modeling each scene node (i.e. entity)
+
 class Node {
    private:
     glm::mat4 model;
     TriangleMesh *mesh;
     float benefit;
     glm::vec2 gridCoords;
-    bool isStatueNode;
+    bool blockedLOD;
+    float blockedDistance;
 
    public:
     Node(TriangleMesh *mesh, glm::mat4 model = glm::mat4(1.0), glm::vec2 coords = glm::vec2(-1,-1));
@@ -31,6 +34,10 @@ class Node {
 
     glm::vec2 getCoords();
     bool isStatue();
+    bool isBlocked();
+    void setBlocked(bool blocked);
+    float getBlockedDistance();
+    void setBlockedDistance(float dist);
 
 };
 

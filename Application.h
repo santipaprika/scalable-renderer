@@ -51,6 +51,8 @@ public:
     bool bUseFixedLODs;
     bool bShowColoredLODs;
     bool bUpdateVisibility;
+    bool bUseHystheresis;
+    bool bUseVisibility;
 
     int repMode;                      // Representative computation mode
     int clusterMode;                  // Clustering mode
@@ -60,6 +62,9 @@ public:
 
     int currentLOD;
     int TPS;
+
+    int hystheresisMode;
+    float hystheresisFactor;
 
 private:
 	bool bPlay;                       // Continue?

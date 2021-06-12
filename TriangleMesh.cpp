@@ -27,7 +27,7 @@ void TriangleMesh::addTriangle(int v0, int v1, int v2) {
 
 void TriangleMesh::initializeMesh() {
     computeAABB();
-    cost = nextLOD ? nextLOD->triangles.size()/3 - triangles.size()/3 : -1;
+    cost = nextLOD ? nextLOD->triangles.size()/3 - triangles.size()/3 : 0;
     sendToOpenGL(Application::instance().scene.basicProgram);
 }
 
@@ -434,7 +434,14 @@ TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_m
     return LOD;
 }
 
+// Difference in cost to use next LOD
 float TriangleMesh::getCost() const
 {
     return cost;
+}
+
+// Total cost to use current LOD
+float TriangleMesh::getTotalCost() const
+{
+    return triangles.size()/3;
 }

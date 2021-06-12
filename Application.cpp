@@ -41,6 +41,8 @@ void Application::init() {
     framerate = 0;
 
     TPS = 10000000;
+    hystheresisFactor = 0.5f;
+    hystheresisMode = ABS_DIST_HYSTHERESIS;
 
     cursorInGameMode = true;
     bDrawPoints = false;
@@ -55,6 +57,8 @@ void Application::init() {
     bUseFixedLODs = false;
     bShowColoredLODs = true;
     bUpdateVisibility = true;
+    bUseHystheresis = false;
+    bUseVisibility = true;
 
     scene.init();
 }
@@ -156,7 +160,8 @@ void Application::render() {
                 scene.decreaseAllNodesLOD();
         }
     } else {
-        ImGui::SliderInt("Triangles per Second", &TPS, 1000000, 500000000);
+        ImGui::Text("Triangles per second (TPS):");
+        ImGui::SliderInt("##Triangles per Second", &TPS, 1000000, 300000000);
     }
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
@@ -164,6 +169,32 @@ void Application::render() {
     ImGui::Separator();  // ------------
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Checkbox("Use hystheresis", &bUseHystheresis);
+
+    if (bUseHystheresis) {
+        ImGui::Text("Hystheresis mode:");
+        const char* hystheresisModeItems[] = {"[A] Absolute distance hystheresis", "[R] Relative distance hystheresis"};
+
+        HelpMarker("Absolute distance: Individual LOD transitions will be re-allowed after moving closer/further than the defined distance\n Relative distance: Individual LOD transitions will be re-allowed after moving closer/further than the distance from the node to the the camera scaled by the defined factor");
+        if (ImGui::Combo("##hystheresismode", &hystheresisMode, hystheresisModeItems, IM_ARRAYSIZE(hystheresisModeItems)))
+            hystheresisFactor = (hystheresisMode == ABS_DIST_HYSTHERESIS) ? 0.5f : 0.1f;
+        if (hystheresisMode == ABS_DIST_HYSTHERESIS) {
+            ImGui::Text("Hystheresis distance:");
+            ImGui::SliderFloat("##Hystheresis distance", &hystheresisFactor, 0.f, 5.f);
+        } else if (hystheresisMode == REL_DIST_HYSTHERESIS) {
+            ImGui::Text("Hystheresis factor:");
+            ImGui::SliderFloat("##Hystheresis factor", &hystheresisFactor, 0.f, 2.f);
+        }
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Separator();  // ------------
+
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    ImGui::Checkbox("Use visibility", &bUseVisibility);
 
     if (ImGui::Button(bUpdateVisibility ? "Freeze visibility" : "Unfreeze visibility"))
         bUpdateVisibility = !bUpdateVisibility;

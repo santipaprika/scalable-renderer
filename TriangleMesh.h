@@ -54,6 +54,7 @@ class TriangleMesh {
     TriangleMesh* fillLODs(vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
 
     float getCost() const;
+    float getTotalCost() const;
     
     vector<int> triangles;
     vector<glm::vec3> vertices;
@@ -73,6 +74,7 @@ class TriangleMesh {
     TriangleMesh* previousLOD;
     TriangleMesh* nextLOD;
 
+    // cost to use next LOD
     float cost;
 };
 
