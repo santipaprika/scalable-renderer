@@ -382,7 +382,7 @@ void Scene::initializeVisibility() {
     std::ifstream visibilityFile("visibility.vis");
 
     if (!visibilityFile.is_open()) {
-        VisibilityComputer::computeAndSaveVisibility("../tilemap.tmx");
+        VisibilityComputer::computeAndSaveVisibility("../museum/tilemap.tmx");
         visibilityFile.open("visibility.vis");
     }
 

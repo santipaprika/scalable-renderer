@@ -202,7 +202,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
     }
 
     mesh = new TriangleMesh();
-    cout << "Reading mesh..." << endl;
+    cout << "Reading mesh '" << filename << "'" << endl;
     bool bSuccess = PLYReader::readMesh(filename, (*mesh));
     if (bSuccess) {
         mesh->initializeMesh();
@@ -218,6 +218,8 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         // compute all LODS and get the lowest
         meshes[filename] = mesh->computeLODs(octree);
         writeLODS(filename);
+    } else {
+        cout << "E02: Mesh " << filename << " not found!" << endl;
     }
     delete mesh;
 
@@ -318,20 +320,29 @@ void TriangleMesh::fillOctree(Octree *octree, vector<Octree *> &vertexOctree, un
         vector<unordered_set<Plane *>> octreeToQuadric;
         for (int i = 0; i < nVerts; i++) {
             if (i % (nVerts/20) == 0)
-                cout << "[" << i/(float)nVerts * 100.f << "%] Filling octree" << endl;
+                cout << "[" << round(i/(float)nVerts * 100.f) << "%] Filling octree" << endl;
             vertexOctree.push_back(octree->evaluateVertexQEM(vertices[i], vertexToQuadric, OUT octreeToQuadric, vertexToNormalCluster, minAABB, (maxAABB.x-minAABB.x + 0.2f)/2.f, i));
         }
     } else {
         // fill and subdivide octree
         for (int i = 0; i < nVerts; i++) {
             if (i % (nVerts/20) == 0)
-                cout << "[" << i/(float)nVerts * 100.f << "%] Filling octree" << endl;
+                cout << "[" << round(i/(float)nVerts * 100.f) << "%] Filling octree" << endl;
             vertexOctree.push_back(octree->evaluateVertexAVG(vertices[i], vertexToNormalCluster, minAABB, (maxAABB.x-minAABB.x + 0.2f)/2.f, i));
         }
     }
 
-    Utils::freeContainer(vertexToQuadric);
+    // Deallocate used planes
+    unordered_set<Plane*> planesToRemove;
+    for (pair<int,unordered_set<Plane *>> quadrics : vertexToQuadric) {
+        for (Plane* quadric : quadrics.second) {
+            planesToRemove.insert(quadric);
+        }
+    }
 
+    for (Plane* plane : planesToRemove)
+        delete plane;
+        
     cout << "Done!" << endl;
 }
 

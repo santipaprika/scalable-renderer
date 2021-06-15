@@ -6,7 +6,7 @@
 #include "Scene.h"
 
 #define OUT
-#define N_RAYS 100
+#define N_RAYS 20
 #define EPS 0.000001
 
 std::unordered_set<glm::vec2>** VisibilityComputer::visibilityPerCell; 
