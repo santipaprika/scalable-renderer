@@ -22,4 +22,12 @@ class Utils {
             delete[] pointerArray[i];
         delete[] pointerArray;
     }
+
+    template<typename T>
+    static void freeContainer(T& p_container)
+    {
+        T empty;
+        using std::swap;
+        swap(p_container, empty);
+    }
 };

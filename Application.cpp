@@ -49,8 +49,8 @@ void Application::init() {
     repMode = AVG;
     clusterMode = VOXEL;
 
-    minLODLevel = 5;
-    maxLODLevel = 8;
+    minLODLevel = 6;
+    maxLODLevel = 9;
 
     currentLOD = minLODLevel;
 

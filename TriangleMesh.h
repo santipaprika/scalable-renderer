@@ -23,6 +23,7 @@ using namespace std;
 class TriangleMesh {
    public:
     TriangleMesh();
+    ~TriangleMesh();
 
     void addVertex(const glm::vec3 &position);
     void addTriangle(int v0, int v1, int v2);
@@ -37,7 +38,7 @@ class TriangleMesh {
     void computeAABB();
     glm::vec3 getExtents() const;
 
-    TriangleMesh* computeLODs(Octree *octree);
+    TriangleMesh *computeLODs(Octree *octree);
     vector<Plane *> generateQuadrics();
     unordered_map<int, unordered_set<Plane *>> associateVerticesToQuadrics();
     unordered_map<int, unordered_set<int>> associateVerticesToNormalClusters(unordered_map<int, unordered_set<Plane *>> vertexToQuadric);
@@ -48,14 +49,14 @@ class TriangleMesh {
     static bool readLODS(string filename);
     static void clearMeshes();
     bool hasLODs() const;
-    TriangleMesh* getPreviousLOD();
-    TriangleMesh* getNextLOD();
-    void fillOctree(Octree* octree, vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
-    TriangleMesh* fillLODs(vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
+    TriangleMesh *getPreviousLOD();
+    TriangleMesh *getNextLOD();
+    void fillOctree(Octree *octree, vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
+    TriangleMesh *fillLODs(vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster);
 
     float getCost() const;
     float getTotalCost() const;
-    
+
     vector<int> triangles;
     vector<glm::vec3> vertices;
 
@@ -69,10 +70,10 @@ class TriangleMesh {
     glm::vec3 minAABB;
     glm::vec3 maxAABB;
 
-    static unordered_map<string, TriangleMesh*> meshes;
+    static unordered_map<string, TriangleMesh *> meshes;
 
-    TriangleMesh* previousLOD;
-    TriangleMesh* nextLOD;
+    TriangleMesh *previousLOD;
+    TriangleMesh *nextLOD;
 
     // cost to use next LOD
     float cost;

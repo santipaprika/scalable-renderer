@@ -6,6 +6,7 @@
 #include "PLYReader.h"
 #include "PLYWriter.h"
 #include "Scene.h"
+#include "Utils.h"
 
 using namespace std;
 
@@ -13,6 +14,11 @@ TriangleMesh::TriangleMesh() {
     previousLOD = nullptr;
     nextLOD = nullptr;
     LODidx = -1;
+}
+
+TriangleMesh::~TriangleMesh() 
+{
+    free();
 }
 
 void TriangleMesh::addVertex(const glm::vec3 &position) {
@@ -124,10 +130,6 @@ glm::vec3 TriangleMesh::getExtents() const {
 TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     // contains the quadrics associated to each vertex index
     vector<Octree *> vertexOctree;
-    // vertexOctree.resize(vertices.size());
-
-    std::cout << "Creating new LODs..." << std::endl;
-    
     unordered_map<int, unordered_set<int>> vertexToNormalCluster;
 
     fillOctree(octree, vertexOctree, vertexToNormalCluster);
@@ -135,6 +137,7 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     // update each node's representative
     octree->computeRepresentatives();
 
+    std::cout << "Creating new LODs..." << std::endl;
     TriangleMesh *LOD = fillLODs(vertexOctree, vertexToNormalCluster);
 
     delete octree;
@@ -199,6 +202,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
     }
 
     mesh = new TriangleMesh();
+    cout << "Reading mesh..." << endl;
     bool bSuccess = PLYReader::readMesh(filename, (*mesh));
     if (bSuccess) {
         mesh->initializeMesh();
@@ -209,7 +213,7 @@ TriangleMesh *TriangleMesh::Get(string filename) {
         glm::vec3 minAABBcube = glm::vec3(center - maxExtent / 2.0f);
 
         // LODS
-        Octree *octree = new Octree(Application::instance().maxLODLevel, minAABBcube - 0.1f, (maxExtent + 0.2f) / 2.0f);
+        Octree *octree = new Octree(Application::instance().maxLODLevel);
 
         // compute all LODS and get the lowest
         meshes[filename] = mesh->computeLODs(octree);
@@ -265,6 +269,7 @@ bool TriangleMesh::readLODS(string filename) {
                 delete mesh;
                 mesh = prevMesh;
             }
+            cout << "LOD not found! Generating from scartch..." << endl;
             return false;
         }
 
@@ -300,24 +305,34 @@ void TriangleMesh::fillOctree(Octree *octree, vector<Octree *> &vertexOctree, un
     int clusterMode = Application::instance().clusterMode;
 
     if (clusterMode == VOXEL_AND_NORMAL) {
+        cout << "Prossessing normal clusters..." << endl;
         vertexToQuadric = associateVerticesToQuadrics();
         vertexToNormalCluster = associateVerticesToNormalClusters(vertexToQuadric);
     }
+    int nVerts = vertices.size();
     if (repMode == QEM) {
         if (clusterMode != VOXEL_AND_NORMAL)
             vertexToQuadric = associateVerticesToQuadrics();
 
         // fill and subdivide octree
         vector<unordered_set<Plane *>> octreeToQuadric;
-        for (int i = 0; i < vertices.size(); i++) {
-            vertexOctree.push_back(octree->evaluateVertexQEM(vertices[i], vertexToQuadric, OUT octreeToQuadric, vertexToNormalCluster, i));
+        for (int i = 0; i < nVerts; i++) {
+            if (i % (nVerts/20) == 0)
+                cout << "[" << i/(float)nVerts * 100.f << "%] Filling octree" << endl;
+            vertexOctree.push_back(octree->evaluateVertexQEM(vertices[i], vertexToQuadric, OUT octreeToQuadric, vertexToNormalCluster, minAABB, (maxAABB.x-minAABB.x + 0.2f)/2.f, i));
         }
     } else {
         // fill and subdivide octree
-        for (int i = 0; i < vertices.size(); i++) {
-            vertexOctree.push_back(octree->evaluateVertexAVG(vertices[i], vertexToNormalCluster, i));
+        for (int i = 0; i < nVerts; i++) {
+            if (i % (nVerts/20) == 0)
+                cout << "[" << i/(float)nVerts * 100.f << "%] Filling octree" << endl;
+            vertexOctree.push_back(octree->evaluateVertexAVG(vertices[i], vertexToNormalCluster, minAABB, (maxAABB.x-minAABB.x + 0.2f)/2.f, i));
         }
     }
+
+    Utils::freeContainer(vertexToQuadric);
+
+    cout << "Done!" << endl;
 }
 
 TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_map<int, unordered_set<int>> &vertexToNormalCluster) {
@@ -345,7 +360,9 @@ TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_m
         unordered_map<int, vector<int>> octreeIdxClusterDict;
         // new mesh here
         int count = 0;
-        if (clusterMode == VOXEL_AND_NORMAL) {
+
+        // ADD VERTICES
+        if (clusterMode == VOXEL_AND_NORMAL) {  // NORMAL CLUSTERING
             for (int i = 0; i < vertices.size(); i++) {
                 // add vertex coordinate
                 for (int j : vertexToNormalCluster[i]) {
@@ -357,7 +374,7 @@ TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_m
                     }
                 }
             }
-        } else {
+        } else {    // STANDARD CLUSTERING
             for (int i = 0; i < vertices.size(); i++) {
                 // add vertex coordinate
                 if (octreeIdxDict.find(vertexOctree[i]->getIndex()) == octreeIdxDict.end()) {
@@ -371,6 +388,7 @@ TriangleMesh *TriangleMesh::fillLODs(vector<Octree *> &vertexOctree, unordered_m
 
         std::unordered_map<glm::vec3, bool> facesDict;
 
+        // ADD FACES
         if (clusterMode == VOXEL) {
             for (int i = 0; i < triangles.size(); i += 3) {
                 glm::vec3 face = glm::vec3(octreeIdxDict[vertexOctree[triangles[i]]->getIndex()],

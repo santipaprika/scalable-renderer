@@ -74,8 +74,9 @@ void Camera::computeGridCoordinates()
 void Camera::move(glm::vec3 delta_direction)
 {
     glm::vec3 moveAmount = (-delta_direction * (sprint ? sprintVelocity : velocity));
-    glm::vec4 moveAmountH(moveAmount, 1.0f);
+    glm::vec4 moveAmountH(moveAmount.x, 0.f, moveAmount.z, 1.0f);
     moveAmountH = modelview * moveAmountH;
+    moveAmountH.y += moveAmount.y;
     position = glm::vec3(moveAmountH);
 
     computeModelViewMatrix();

@@ -59,7 +59,3 @@ void Utils::parseGrid(std::ifstream &tilemap, int **&grid, glm::vec2 gridSize)
         }
     }
 }
-
-// template<typename T>
-// void Utils::initializePointerMatrix(T** &pointerArray, int sizeX, int sizeY) 
-

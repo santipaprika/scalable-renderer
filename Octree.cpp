@@ -7,10 +7,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-Octree::Octree(int maxDepth, glm::vec3 minAABB, float halfLength, Octree *parent) {
+Octree::Octree(int maxDepth, Octree *parent) {
     this->maxDepth = maxDepth;
-    this->minAABB = minAABB;
-    this->halfLength = halfLength;
     this->parent = parent;
 
     for (int i = 0; i < 8; i++) {
@@ -47,7 +45,7 @@ glm::vec3 Octree::getPosition() const {
 }
 
 Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, unordered_set<Plane *>> &vertexToQuadric, vector<unordered_set<Plane *>> &octreeToQuadric,
-                                  unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int vertexIdx) {
+                                  unordered_map<int, unordered_set<int>> &vertexToNormalCluster, glm::vec3 minAABB, float halfLength, int vertexIdx) {
     int clusterMode = Application::instance().clusterMode;
     if (octreeToQuadric.size() <= idx*8) {
         int rep = (clusterMode == VOXEL_AND_NORMAL) ? 8 : 1;
@@ -89,15 +87,14 @@ Octree *Octree::evaluateVertexQEM(const glm::vec3 &vertex, unordered_map<int, un
     bool y = vertexVec.y > 0;  // Is at top half
     bool z = vertexVec.z > 0;  // Is at front half
 
-    if (!childs[z * 4 + y * 2 + x]) {
-        glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
-        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
-    }
+    glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
+    if (!childs[z * 4 + y * 2 + x])
+        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, this);
 
-    return childs[z * 4 + y * 2 + x]->evaluateVertexQEM(vertex, vertexToQuadric, octreeToQuadric, vertexToNormalCluster, vertexIdx);
+    return childs[z * 4 + y * 2 + x]->evaluateVertexQEM(vertex, vertexToQuadric, octreeToQuadric, vertexToNormalCluster, minAABBchild, halfLength/2.f, vertexIdx);
 }
 
-Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, unordered_set<int>> &vertexToNormalCluster, int vertexIdx) {
+Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, unordered_set<int>> &vertexToNormalCluster, glm::vec3 minAABB, float halfLength, int vertexIdx) {
     int clusterMode = Application::instance().clusterMode;
 
     if (clusterMode == VOXEL) {
@@ -123,12 +120,12 @@ Octree *Octree::evaluateVertexAVG(const glm::vec3 &vertex, unordered_map<int, un
     bool y = vertexVec.y > 0;  // Is at top half
     bool z = vertexVec.z > 0;  // Is at front half
 
-    if (!childs[z * 4 + y * 2 + x]) {
-        glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
-        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, minAABBchild, halfLength / 2.0f, this);
-    }
+    glm::vec3 minAABBchild = minAABB + glm::vec3(x, y, z) * halfLength;
 
-    return childs[z * 4 + y * 2 + x]->evaluateVertexAVG(vertex, vertexToNormalCluster, vertexIdx);
+    if (!childs[z * 4 + y * 2 + x])
+        childs[z * 4 + y * 2 + x] = new Octree(maxDepth - 1, this);
+
+    return childs[z * 4 + y * 2 + x]->evaluateVertexAVG(vertex, vertexToNormalCluster, minAABBchild, halfLength/2.f, vertexIdx);
 }
 
 int Octree::getIndex() const {
@@ -172,6 +169,7 @@ void Octree::computeQEMNClusterPositions() {
 }
 
 void Octree::computeRepresentatives() {
+    cout << "Computing representatives..." << endl;
     int repMode = Application::instance().repMode;
     int clusterMode = Application::instance().clusterMode;
 

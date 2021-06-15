@@ -254,8 +254,8 @@ void Scene::setAllNodesToLOD(int LOD) {
 }
 
 void Scene::clearNodes() {
-    for (Node *node : nodes)
-        delete node;
+    for (int i=0; i<nodes.size(); i++)
+        delete nodes[i];
 
     nodes.clear();
 }
