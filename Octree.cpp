@@ -36,8 +36,10 @@ int Octree::counter;
 
 Octree::~Octree() {
     for (int i = 0; i < 8; i++)
-        if (childs[i])
+        if (childs[i]) {
             delete childs[i];
+            childs[i] = nullptr;
+        }
 }
 
 glm::vec3 Octree::getPosition() const {

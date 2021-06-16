@@ -141,6 +141,7 @@ TriangleMesh *TriangleMesh::computeLODs(Octree *octree) {
     TriangleMesh *LOD = fillLODs(vertexOctree, vertexToNormalCluster);
 
     delete octree;
+    octree = nullptr;
 
     return LOD;
 }
