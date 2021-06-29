@@ -6,7 +6,7 @@ Real-time renderer built on C++ with scalability features and optimization algor
 Final project for the _UPC_ course _Scalable Rendering for Graphics and Game Engines_.
 
 ## Demo
-WIP
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/btikFe5sELE/0.jpg)](https://youtu.be/btikFe5sELE)
 
 ## Dependencies
 
